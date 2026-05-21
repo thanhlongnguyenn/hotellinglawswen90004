@@ -45,6 +45,7 @@ def experiment_one(params):
 if __name__ == "__main__":
     """EXPERIMENT 1: Python Model Validation
 
+    Number of runs: 20
     Number of stores: [2, 3, ..., 9, 10]
     Geographic Space: {"line", "plane"}
     Rules: {"normal", "pricing-only", "moving-only"}
@@ -71,6 +72,7 @@ if __name__ == "__main__":
 
     # Define test iterations.
     max_ticks: int = 500
+    number_of_runs: range = range(20)
     number_of_stores: range = range(2, 10, 1)
     geographic_space: set = {"line", "plane"}
     rules: set = {"normal", "pricing-only", "moving-only"}
@@ -78,10 +80,12 @@ if __name__ == "__main__":
     # Build test cases
     test_case: list[tuple] = []
     run_counter: int = 1
-    for num_store in number_of_stores:
-        for layout in geographic_space:
-            for rule in rules:
-                test_case.append((run_counter, max_ticks, num_store, layout, rule))
+    for run in number_of_runs:
+        for num_store in number_of_stores:
+            for layout in geographic_space:
+                for rule in rules:
+                    test_case.append((run_counter, max_ticks, num_store, layout, rule))
+                    run_counter += 1
 
     try:
         # Run test cases on multiple cores.
