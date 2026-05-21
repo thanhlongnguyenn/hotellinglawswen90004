@@ -92,7 +92,7 @@ class Simulation:
     def _recalculate_area(self) -> None:
         """Assigns every consumer to its preferred agent and refreshes area counts.
 
-        Mirrors Netlogo's 'recalculate-area' procedure.
+        Mirrors NetLogo's 'recalculate-area' procedure.
         """
 
         # Reset area counter.
@@ -160,6 +160,8 @@ class Simulation:
 
     def step(self):
         """Iterate the simulation by one tick according to the rules of the simulation.
+
+        Mirrors Netlogo's 'go' procedure.
 
         Assumption:
             For similarity to the Netlogo implementation, and simulate simultaneous
