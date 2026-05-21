@@ -1,6 +1,7 @@
 import multiprocessing
 import log_utils
 from simulation import run_simulation_experiment
+import random
 
 if __name__ == "__main__":
     """EXPERIMENT 1: Python Model Validation
@@ -11,6 +12,8 @@ if __name__ == "__main__":
     Rules: {"normal", "pricing-only", "moving-only"}
     Max Ticks: 500
     """
+    # Set random seed for repeatability.
+    random.seed(42)
 
     # Initialise test logging file.
     csv_file, csv_writer = log_utils.create_log_file("experiment1")
