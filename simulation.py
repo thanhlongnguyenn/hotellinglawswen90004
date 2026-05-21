@@ -158,13 +158,16 @@ class Simulation:
 
         return hypothetical_market_share
 
-    # ---------------------------------------------------- equilibrium tracking
+    # EQUILIBRIUM TRACKING _____________________________________________________________
 
     def _update_equilibrium_check(self):
-        """Increments or resets the stable-tick counter.
+        """Checks if simulation remains in an equilibrium.
 
-        Mirrors NetLogo's update-equilibrium-check: a tick is considered stable
-        unless any agent changed position or price by more than 1 unit.
+        Mirrors NetLogo's 'update-equilibrium-check'.
+
+        Assumptions:
+            A tick is considered unstable if the agent's position or price has changed
+            by more than 1 unit.
         """
         stable = True
         for agent in self.agents:
