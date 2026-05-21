@@ -19,6 +19,7 @@ def create_log_file(experiment_name: str):
     filepath = f"{curr_time.strftime('%Y%m%d-%H%M%S')}_{experiment_name}.csv"
     csv_file = open(filepath, mode="w", newline="")
     csv_writer = csv.writer(csv_file)
+    print(f"Created new log file at: {filepath}")
 
     # Write header row.
     csv_writer.writerow(["Python Complex Model results", "Table version 2.0"])
