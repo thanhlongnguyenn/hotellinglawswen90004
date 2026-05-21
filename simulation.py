@@ -78,10 +78,17 @@ class Simulation:
             for i, pos in enumerate(positions)
         ]
 
-    # ------------------------------------------------------- consumer queries
+    # CONSUMER QUERIES _________________________________________________________________
 
     def is_valid_consumer_position(self, position: Tuple[int, int]) -> bool:
-        """Returns True if *position* falls on a consumer patch."""
+        """Evaluate whether a given position is valid for a consumer.
+
+        Args:
+            position (Tuple[int, int]): Position to be considered.
+
+        Returns:
+            True if position is valid, False otherwise.
+        """
         x, y = position
         if self.layout == "line":
             return x == 0 and self._min_y <= y <= self._max_y
