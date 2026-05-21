@@ -109,28 +109,47 @@ class Simulation:
         hypothetical_pos: Tuple[int, int],
         hypothetical_price: int,
     ) -> int:
-        """Returns the market share *store_id* would receive if it occupied
-        *hypothetical_pos* at *hypothetical_price*, with all other agents
-        unchanged.
+        """Calculates the hypothetical market share for an agent with a given position
+        and price with all other agents unchanged.
+        
+        Mirrors Netlogo's 'potential-market-share' and 'market-share-if-moveto'
+        procedures together.
+        
+        Args:
+            store_id (int): The ID of the agent.
+            hypothetical_pos (Tuple[int, int]): Hypothetical position of the agent.
+            hypothetical_price (Tuple[int, int]): Hypothetical price of the agent.
 
-        Mirrors NetLogo's potential-market-share / market-share-if-move-to.
+        Returns:
+            Integer representing the hypothetical market share for the provided
+            agent, position, and price.
         """
-        count = 0
+
+        # Find agent with given id.
+        specified_agent = None
+        for agent in self.agents:
+            if agent._id == store_id:
+                specified_agent = agent
+                break
+        assert specified_agent is not None
+
+        # Move agent to hypothetical position and price.
+        current_position: Tuple[int, int] = specified_agent.position
+        specified_agent.position = hypothetical_pos
+        current_price: int = specified_agent.price
+        specified_agent.price = hypothetical_price
+
+        # Consumers evaluate market share.
+        hypothetical_market_share: int = 0
         for consumer in self.consumers:
-            best_deal = float("inf")
-            best_ids: List[int] = []
-            for agent in self.agents:
-                pos = hypothetical_pos if agent._id == store_id else agent.position
-                price = hypothetical_price if agent._id == store_id else agent.price
-                deal = math.dist(pos, consumer.position) + price
-                if deal < best_deal:
-                    best_deal = deal
-                    best_ids = [agent._id]
-                elif deal == best_deal:
-                    best_ids.append(agent._id)
-            if random.choice(best_ids) == store_id:
-                count += 1
-        return count
+            if (consumer.choose_store(self.agents) == specified_agent):
+                hypothetical_market_share += 1
+
+        # Move back to current position and price.
+        specified_agent.position = current_position
+        specified_agent.price = current_price
+
+        return hypothetical_market_share
 
     # ---------------------------------------------------- equilibrium tracking
 
