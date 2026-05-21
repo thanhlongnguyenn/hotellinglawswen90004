@@ -87,33 +87,21 @@ class Simulation:
             return x == 0 and self._min_y <= y <= self._max_y
         return self._min_x <= x <= self._max_x and self._min_y <= y <= self._max_y
 
-    def _choose_store_for_consumer(self, consumer: "Consumer") -> "MarketAgent":
-        """Returns the agent with the lowest (price + distance) for *consumer*.
+    # MARKET SHARE LOGIC _______________________________________________________________
 
-        Ties are broken uniformly at random, matching NetLogo's min-one-of.
-        """
-        best_deal = float("inf")
-        best: List["MarketAgent"] = []
-        for agent in self.agents:
-            deal = math.dist(agent.position, consumer.position) + agent.price
-            if deal < best_deal:
-                best_deal = deal
-                best = [agent]
-            elif deal == best_deal:
-                best.append(agent)
-        return random.choice(best)
-
-    # ----------------------------------------------------- market-share logic
-
-    def _recalculate_area(self):
+    def _recalculate_area(self) -> None:
         """Assigns every consumer to its preferred agent and refreshes area counts.
 
-        Mirrors NetLogo's recalculate-area procedure.
+        Mirrors Netlogo's 'recalculate-area' procedure.
         """
+
+        # Reset area counter.
         for agent in self.agents:
             agent._area_count = 0
+
+        # Update consumer preferred store, and area count.
         for consumer in self.consumers:
-            self._choose_store_for_consumer(consumer)._area_count += 1
+            consumer.choose_store(self.agents)._area_count += 1
 
     def calculate_hypothetical_market_share(
         self,
@@ -193,7 +181,7 @@ class Simulation:
         if not self.moving_only:
             for agent in self.agents:
                 agent.evaluate_price(self)
-        
+
         # Step 3: All agents apply changes at once.
         for agent in self.agents:
             agent.apply_update()
