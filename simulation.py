@@ -1,10 +1,10 @@
 import random
-from typing import Dict, List, Literal, Tuple
+from typing import TYPE_CHECKING, Dict, List, Literal, Tuple
 
-from consumer import Consumer
-from store import Store
-from chain import Chain
-from market_agent import MarketAgent
+if TYPE_CHECKING:
+    from consumer import Consumer
+    from store import Store
+    from market_agent import MarketAgent
 
 
 class Simulation:
@@ -22,9 +22,9 @@ class Simulation:
         width (int): Number of patch columns in the world.
         height (int): Number of patch rows in the world.
         step_count (int): Number of ticks elapsed.
-        consumers (List[Consumer]): All consumer patches.
-        stores (List[Store]): All stores.
-        agents (List[MarketAgent]): All competing market agents.
+        consumers (List["Consumer"]): All consumer patches.
+        stores (List["Store"]): All stores.
+        agents (List["MarketAgent"]): All competing market agents.
     """
 
     def __init__(
@@ -52,9 +52,9 @@ class Simulation:
         self._max_y: int = height // 2
 
         # Setup our consumers, stores, and market agents.
-        self.consumers: List[Consumer] = self._setup_consumers()
-        self.stores: List[Store] = self._setup_stores(number_of_stores)
-        self.agents: List[MarketAgent] = self._setup_agents(mode, number_of_chains)
+        self.consumers: List["Consumer"] = self._setup_consumers()
+        self.stores: List["Store"] = self._setup_stores(number_of_stores)
+        self.agents: List["MarketAgent"] = self._setup_agents(mode, number_of_chains)
 
         # Snapshot of each agent's position and price for equilibrium tracking,
         # mirroring NetLogo's prev-xcor / prev-ycor / prev-price turtle variables.
@@ -66,12 +66,14 @@ class Simulation:
 
     # SETUP ___________________________________________________________________
 
-    def _setup_consumers(self) -> List[Consumer]:
+    def _setup_consumers(self) -> List["Consumer"]:
         """Setup simulation's consumers by assigning 
 
         Returns:
-            List[Consumer]: Consumers to be used in the simulation.
+            List["Consumer"]: Consumers to be used in the simulation.
         """
+        from consumer import Consumer
+
         if self.layout == "line":
             return [Consumer((0, y)) for y in range(self._min_y, self._max_y + 1)]
         return [
@@ -80,7 +82,7 @@ class Simulation:
             for y in range(self._min_y, self._max_y + 1)
         ]
 
-    def _setup_stores(self, number_of_stores: int) -> List[Store]:
+    def _setup_stores(self, number_of_stores: int) -> List["Store"]:
         """Setup simulation's stores by randomly assigning throughout model.
 
         Args:
@@ -90,8 +92,9 @@ class Simulation:
             RuntimeError: Invalid inputs for number of stores provided.
 
         Returns:
-            List[Store]: Stores to be used in the simulation.
+            List["Store"]: Stores to be used in the simulation.
         """
+        from store import Store
 
         # Validate inputs.
         if number_of_stores == 0:
@@ -107,7 +110,7 @@ class Simulation:
 
         return stores
 
-    def _setup_agents(self, mode: str, number_of_chains: int) -> List[MarketAgent]:
+    def _setup_agents(self, mode: str, number_of_chains: int) -> List["MarketAgent"]:
         """Setup market agents for running the simulation.
 
         Args:
@@ -118,9 +121,10 @@ class Simulation:
             RuntimeError: Invalid inputs for mode and number of stores/chains provided.
 
         Returns:
-            List[MarketAgent]: List of agents that implement the MarketAgent interface.
+            List["MarketAgent"]: List of agents that implement the MarketAgent interface.
         """
-        agents: List[MarketAgent] = []
+        from chain import Chain
+        agents: List["MarketAgent"] = []
 
         if mode == "store":
             # Validate inputs for store mode.
