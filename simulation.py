@@ -38,7 +38,7 @@ class Simulation:
         self.moving_only: bool = rules == "moving-only"
         self.width: int = width
         self.height: int = height
-        self.tick: int = 0
+        self.step_count: int = 0
         self._stable_tick_count: int = 0
 
         # Coordinate bounds centred at origin, matching NetLogo's -20..20 default.
@@ -224,7 +224,7 @@ class Simulation:
         self._update_equilibrium_check()
 
         # Step 6: Tick simulation.
-        self.tick += 1
+        self.step_count += 1
 
 
 if __name__ == "__main__":
@@ -233,5 +233,5 @@ if __name__ == "__main__":
     )  # set up for expermiening
     for _ in range(100):
         sim.step()
-    print(f"Steps run: {sim.tick}")
+    print(f"Steps run: {sim.step_count}")
     print(f"Agents: {[(a.position, a.price) for a in sim.agents]}")
