@@ -26,7 +26,6 @@ if __name__ == "__main__":
             "number-of-stores",
             "rules",
             "[step]",
-            "ticks",
             "store-positions",
             "store-market-shares",
             "store-prices",
