@@ -1,10 +1,10 @@
 import math
 import random
-from typing import TYPE_CHECKING, Dict, List, Literal, Tuple
+from typing import Dict, List, Literal, Tuple
 
-if TYPE_CHECKING:
-    from consumer import Consumer
-    from market_agent import MarketAgent
+from consumer import Consumer
+from store import Store
+from market_agent import MarketAgent
 
 
 class Simulation:
@@ -48,7 +48,7 @@ class Simulation:
         self._max_y: int = height // 2
 
         self.consumers: List["Consumer"] = self._setup_consumers()
-        self.agents: List["MarketAgent"] = self._setup_stores(number_of_stores)
+        self.agents: List[Store] = self._setup_stores(number_of_stores)
 
         # Snapshot of each agent's position and price for equilibrium tracking,
         # mirroring NetLogo's prev-xcor / prev-ycor / prev-price turtle variables.
@@ -58,24 +58,20 @@ class Simulation:
 
         self._recalculate_area()
 
-    # ------------------------------------------------------------------ setup
+    # SETUP ___________________________________________________________________
 
     def _setup_consumers(self) -> List["Consumer"]:
-        from consumer import Consumer
-
         if self.layout == "line":
             return [Consumer((0, y)) for y in range(self._min_y, self._max_y + 1)]
         return [
-            Consumer((x,y))
+            Consumer((x, y))
             for x in range(self._min_x, self._max_x + 1)
             for y in range(self._min_y, self._max_y + 1)
         ]
 
-    def _setup_stores(self, number_of_stores: int) -> List["MarketAgent"]:
-        from store import Store
-
+    def _setup_stores(self, number_of_stores: int) -> List[Store]:
         positions = random.sample(
-            [tuple(c.position) for c in self.consumers], number_of_stores
+            [c.position for c in self.consumers], number_of_stores
         )
         return [
             Store(agent_id=i, area_count=0, position=pos, price=10)
