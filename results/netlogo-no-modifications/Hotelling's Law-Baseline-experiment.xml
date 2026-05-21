@@ -1,0 +1,27 @@
+
+<experiments>
+  <experiment name="Baseline" repetitions="20" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="500">
+    <setup>setup</setup>
+    <go>go</go>
+    <metrics>
+      <metric>[(list who xcor ycor)] of turtles</metric>
+      <metric>[(list who area-count)] of turtles</metric>
+      <metric>[(list who price)] of turtles</metric>
+    </metrics>
+    <constants>
+      <enumeratedValueSet variable="random-seed">
+        <value value="42"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="layout">
+        <value value="&quot;plane&quot;"></value>
+        <value value="&quot;line&quot;"></value>
+      </enumeratedValueSet>
+      <steppedValueSet variable="number-of-stores" first="2" step="1" last="10"></steppedValueSet>
+      <enumeratedValueSet variable="rules">
+        <value value="&quot;normal&quot;"></value>
+        <value value="&quot;moving-only&quot;"></value>
+        <value value="&quot;pricing-only&quot;"></value>
+      </enumeratedValueSet>
+    </constants>
+  </experiment>
+</experiments>
