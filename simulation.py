@@ -64,9 +64,9 @@ class Simulation:
         from consumer import Consumer
 
         if self.layout == "line":
-            return [Consumer(0, y) for y in range(self._min_y, self._max_y + 1)]
+            return [Consumer((0, y)) for y in range(self._min_y, self._max_y + 1)]
         return [
-            Consumer(x, y)
+            Consumer((x,y))
             for x in range(self._min_x, self._max_x + 1)
             for y in range(self._min_y, self._max_y + 1)
         ]
@@ -195,7 +195,9 @@ class Simulation:
 
 
 if __name__ == "__main__":
-    sim = Simulation(number_of_stores=3, layout="plane", rules="normal") # set up for expermiening
+    sim = Simulation(
+        number_of_stores=3, layout="plane", rules="normal"
+    )  # set up for expermiening
     for _ in range(100):
         sim.step()
     print(f"Steps run: {sim.step_count}")

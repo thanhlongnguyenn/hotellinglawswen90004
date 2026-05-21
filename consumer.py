@@ -3,6 +3,8 @@ from __future__ import annotations
 import math
 import random
 
+from store import Store
+
 
 class Consumer:
     """
@@ -10,21 +12,24 @@ class Consumer:
     simulation framework.
     """
 
-    def __init__(self, position_x: int, position_y: int):
+    position: tuple[int, int]
+
+    def __init__(self, position: tuple[int, int]):
         """Constructor for Consumer class.
 
         Args:
-            position_x (int): Position of the consumer in the x-axis.
-            position_y (int): Position of the consumer in the y-axis.
+            position (tuple[int, int]): Position of the consumer.
         """
 
-        self.position: list[int] = [position_x, position_y]
-        return None
+        self.position = position
+        self.preferred_store = None
 
-    def choose_stores(self, stores: list[Store]) -> Store:
+    def choose_store(self, stores: list[Store]) -> Store:
         """Consumer selects the store that has the best deal, defined as the smallest
         sum of price and distance.
 
+        Mirrors NetLogo's 'choose-store' procedure.
+        
         Assumption:
             For similarity to NetLogo implementation, distance is implemented as euclidean
                 distance from centroid to centroid.
@@ -33,27 +38,27 @@ class Consumer:
 
         Args:
             stores (list[Store]): Stores that the consumer can choose from.
-
+        
         Returns:
-            Store that the consumer will consume from.
+            Store instance that is preferred by the consumer.
         """
 
         # Find stores with best deal.
         best_deal: float = (
             math.dist(stores[0].position, self.position) + stores[0].price
         )
-        best_deal_stores: set[Store] = set(stores[0])
+        best_deal_stores: list[Store] = [stores[0]]
         for store in stores:
             deal: float = math.dist(store.position, self.position) + store.price
 
             if deal < best_deal:
                 # New best deal found.
                 best_deal = deal
-                best_deal_stores = set(store)
+                best_deal_stores = [store]
 
             elif deal == best_deal:
                 # Equal best deal found.
-                best_deal_stores.add(store)
+                best_deal_stores.append(store)
 
         # Select store to consume from.
         return random.choice(best_deal_stores)
