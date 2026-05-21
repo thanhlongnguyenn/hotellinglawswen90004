@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # Define test iterations.
     max_ticks: int = 500
     number_of_runs: range = range(20)
-    number_of_stores: range = range(2, 10, 1)
+    number_of_stores: range = range(2, 11, 1)
     geographic_space: set = {"line", "plane"}
     rules: set = {"normal", "pricing-only", "moving-only"}
 
