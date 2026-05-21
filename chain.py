@@ -9,7 +9,7 @@ class Chain(MarketAgent):
     Concrete composite of Stores to define group behaviour.
     """
 
-    def __init__(self, agent_id: int, area_count: int):
+    def __init__(self, agent_id: int, area_count: int, stores: List[Store]):
         super().__init__(agent_id, area_count)
 
         self.controlled_stores: List[Store] = []

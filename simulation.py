@@ -1,9 +1,9 @@
-import math
 import random
 from typing import Dict, List, Literal, Tuple
 
 from consumer import Consumer
 from store import Store
+from chain import Chain
 from market_agent import MarketAgent
 
 
@@ -18,18 +18,22 @@ class Simulation:
         layout (str): "plane" for 2-D grid, "line" for 1-D column (pxcor=0).
         pricing_only (bool): Stores may only change prices, not move.
         moving_only (bool): Stores may only move, not change prices.
+        mode (str): "store" for stores only, "chain" for chains mode.
         width (int): Number of patch columns in the world.
         height (int): Number of patch rows in the world.
         step_count (int): Number of ticks elapsed.
         consumers (List[Consumer]): All consumer patches.
+        stores (List[Store]): All stores.
         agents (List[MarketAgent]): All competing market agents.
     """
 
     def __init__(
         self,
-        number_of_stores: int = 3,
         layout: Literal["plane", "line"] = "plane",
         rules: Literal["normal", "moving-only", "pricing-only"] = "normal",
+        mode: Literal["store", "chain"] = "store",
+        number_of_stores: int = 3,
+        number_of_chains: int = 0,
         width: int = 41,
         height: int = 41,
     ):
@@ -47,20 +51,27 @@ class Simulation:
         self._min_y: int = -(height // 2)
         self._max_y: int = height // 2
 
-        self.consumers: List["Consumer"] = self._setup_consumers()
-        self.agents: List[Store] = self._setup_stores(number_of_stores)
+        # Setup our consumers, stores, and market agents.
+        self.consumers: List[Consumer] = self._setup_consumers()
+        self.stores: List[Store] = self._setup_stores(number_of_stores)
+        self.agents: List[MarketAgent] = self._setup_agents(mode, number_of_chains)
 
         # Snapshot of each agent's position and price for equilibrium tracking,
         # mirroring NetLogo's prev-xcor / prev-ycor / prev-price turtle variables.
         self._prev_state: Dict[int, Tuple[Tuple[int, int], int]] = {
-            a._id: (a.position, a.price) for a in self.agents
+            a._id: (a.position, a.price) for a in self.stores
         }
 
         self._recalculate_area()
 
     # SETUP ___________________________________________________________________
 
-    def _setup_consumers(self) -> List["Consumer"]:
+    def _setup_consumers(self) -> List[Consumer]:
+        """Setup simulation's consumers by assigning 
+
+        Returns:
+            List[Consumer]: Consumers to be used in the simulation.
+        """
         if self.layout == "line":
             return [Consumer((0, y)) for y in range(self._min_y, self._max_y + 1)]
         return [
@@ -70,13 +81,72 @@ class Simulation:
         ]
 
     def _setup_stores(self, number_of_stores: int) -> List[Store]:
+        """Setup simulation's stores by randomly assigning throughout model.
+
+        Args:
+            number_of_stores (int): Number of stores to include in the model.
+
+        Raises:
+            RuntimeError: Invalid inputs for number of stores provided.
+
+        Returns:
+            List[Store]: Stores to be used in the simulation.
+        """
+
+        # Validate inputs.
+        if number_of_stores == 0:
+            raise RuntimeError("Must specify at least 1 store.")
+
+        # Randomly select starting location for Store agents.
+        stores = []
         positions = random.sample(
             [c.position for c in self.consumers], number_of_stores
         )
-        return [
-            Store(agent_id=i, area_count=0, position=pos, price=10)
-            for i, pos in enumerate(positions)
-        ]
+        for i, pos in enumerate(positions):
+            stores.append(Store(agent_id=i, area_count=0, position=pos, price=10))
+
+        return stores
+
+    def _setup_agents(self, mode: str, number_of_chains: int) -> List[MarketAgent]:
+        """Setup market agents for running the simulation.
+
+        Args:
+            mode (str): Mode that the simulation is running in.
+            number_of_chains (int): Number of chains to include in simulation.
+
+        Raises:
+            RuntimeError: Invalid inputs for mode and number of stores/chains provided.
+
+        Returns:
+            List[MarketAgent]: List of agents that implement the MarketAgent interface.
+        """
+        agents: List[MarketAgent] = []
+
+        if mode == "store":
+            # Validate inputs for store mode.
+            if number_of_chains != 0:
+                raise RuntimeError("Cannot specify any chains when mode is 'store'")
+
+            # Stores are the agents.
+            agents = self.stores
+
+        elif mode == "chain":
+            # Validate inputs for chain mode.
+            if number_of_chains == 0:
+                raise RuntimeError("Must specify at least 1 chain.")
+
+            # Partition stores into nearly equal groups.
+            for i in range(number_of_chains):
+                agents.append(Chain(
+                    agent_id=-i,
+                    area_count=0,
+                    stores=self.stores[i::number_of_chains]
+                ))
+
+        else:
+            raise RuntimeError("Invalid mode provided.")
+
+        return agents
 
     # CONSUMER QUERIES _________________________________________________________________
 
@@ -103,12 +173,12 @@ class Simulation:
         """
 
         # Reset area counter.
-        for agent in self.agents:
+        for agent in self.stores:
             agent._area_count = 0
 
         # Update consumer preferred store, and area count.
         for consumer in self.consumers:
-            consumer.choose_store(self.agents)._area_count += 1
+            consumer.choose_store(self.stores)._area_count += 1
 
     def calculate_hypothetical_market_share(
         self,
@@ -118,10 +188,10 @@ class Simulation:
     ) -> int:
         """Calculates the hypothetical market share for an agent with a given position
         and price with all other agents unchanged.
-        
+
         Mirrors Netlogo's 'potential-market-share' and 'market-share-if-moveto'
         procedures together.
-        
+
         Args:
             store_id (int): The ID of the agent.
             hypothetical_pos (Tuple[int, int]): Hypothetical position of the agent.
@@ -133,28 +203,28 @@ class Simulation:
         """
 
         # Find agent with given id.
-        specified_agent = None
-        for agent in self.agents:
-            if agent._id == store_id:
-                specified_agent = agent
+        my_store = None
+        for store in self.stores:
+            if store._id == store_id:
+                my_store = store
                 break
-        assert specified_agent is not None
+        assert my_store is not None
 
         # Move agent to hypothetical position and price.
-        current_position: Tuple[int, int] = specified_agent.position
-        specified_agent.position = hypothetical_pos
-        current_price: int = specified_agent.price
-        specified_agent.price = hypothetical_price
+        current_position: Tuple[int, int] = my_store.position
+        my_store.position = hypothetical_pos
+        current_price: int = my_store.price
+        my_store.price = hypothetical_price
 
         # Consumers evaluate market share.
         hypothetical_market_share: int = 0
         for consumer in self.consumers:
-            if (consumer.choose_store(self.agents) == specified_agent):
+            if consumer.choose_store(self.stores) == my_store:
                 hypothetical_market_share += 1
 
         # Move back to current position and price.
-        specified_agent.position = current_position
-        specified_agent.price = current_price
+        my_store.position = current_position
+        my_store.price = current_price
 
         return hypothetical_market_share
 
@@ -170,7 +240,7 @@ class Simulation:
             by more than 1 unit.
         """
         stable = True
-        for agent in self.agents:
+        for agent in self.stores:
             prev_pos, prev_price = self._prev_state[agent._id]
             if abs(agent.position[0] - prev_pos[0]) > 1:
                 stable = False
@@ -234,4 +304,4 @@ if __name__ == "__main__":
     for _ in range(100):
         sim.step()
     print(f"Steps run: {sim.step_count}")
-    print(f"Agents: {[(a.position, a.price) for a in sim.agents]}")
+    print(f"Stores: {[(a.position, a.price) for a in sim.stores]}")
