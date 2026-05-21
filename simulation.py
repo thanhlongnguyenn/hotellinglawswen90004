@@ -1,10 +1,9 @@
-import math
 import random
-from typing import Dict, List, Literal, Tuple
+from typing import TYPE_CHECKING, Dict, List, Literal, Tuple
 
-from consumer import Consumer
-from store import Store
-from market_agent import MarketAgent
+if TYPE_CHECKING:
+    from consumer import Consumer
+    from store import Store
 
 
 class Simulation:
@@ -21,8 +20,8 @@ class Simulation:
         width (int): Number of patch columns in the world.
         height (int): Number of patch rows in the world.
         step_count (int): Number of ticks elapsed.
-        consumers (List[Consumer]): All consumer patches.
-        agents (List[MarketAgent]): All competing market agents.
+        consumers (List["Consumer"]): All consumer patches.
+        agents (List["MarketAgent"]): All competing market agents.
     """
 
     def __init__(
@@ -48,7 +47,7 @@ class Simulation:
         self._max_y: int = height // 2
 
         self.consumers: List["Consumer"] = self._setup_consumers()
-        self.agents: List[Store] = self._setup_stores(number_of_stores)
+        self.agents: List["Store"] = self._setup_stores(number_of_stores)
 
         # Snapshot of each agent's position and price for equilibrium tracking,
         # mirroring NetLogo's prev-xcor / prev-ycor / prev-price turtle variables.
@@ -61,6 +60,8 @@ class Simulation:
     # SETUP ___________________________________________________________________
 
     def _setup_consumers(self) -> List["Consumer"]:
+        from consumer import Consumer
+
         if self.layout == "line":
             return [Consumer((0, y)) for y in range(self._min_y, self._max_y + 1)]
         return [
@@ -69,7 +70,9 @@ class Simulation:
             for y in range(self._min_y, self._max_y + 1)
         ]
 
-    def _setup_stores(self, number_of_stores: int) -> List[Store]:
+    def _setup_stores(self, number_of_stores: int) -> List["Store"]:
+        from store import Store
+
         positions = random.sample(
             [c.position for c in self.consumers], number_of_stores
         )
