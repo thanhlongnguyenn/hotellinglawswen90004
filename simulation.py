@@ -38,7 +38,7 @@ class Simulation:
         self.moving_only: bool = rules == "moving-only"
         self.width: int = width
         self.height: int = height
-        self.step_count: int = 0
+        self.tick: int = 0
         self._stable_tick_count: int = 0
 
         # Coordinate bounds centred at origin, matching NetLogo's -20..20 default.
@@ -168,26 +168,44 @@ class Simulation:
         """Returns True when the simulation has been stable for 10 consecutive ticks."""
         return self._stable_tick_count >= 10
 
-    # main loop
+    # EXECUTION ________________________________________________________________________
 
     def step(self):
+        """Iterate the simulation by one tick according to the rules of the simulation.
+
+        Assumption:
+            For similarity to the Netlogo implementation, and simulate simultaneous
+            decision making, we have followed Netlogo's go procedure:
+                1. All agents simultaneously evaluate their optimal move.
+                2. All agents simultaneously evaluate their optimal price.
+                3. All changes are applied at once.
+                4. Consumer-store assignments and area counts are recalculated.
+                5. The equilibrium counter is updated.
+                6. Tick the simulation.
         """
-        Mirrors NetLogo's go procedure:
-          1. All agents simultaneously evaluate their optimal move.
-          2. All agents simultaneously evaluate their optimal price.
-          3. All changes are applied at once.
-          4. Consumer-store assignments and area counts are recalculated.
-          5. The equilibrium counter is updated.
-        """
-        for agent in self.agents:
-            agent.evaluate_move(self)
-        for agent in self.agents:
-            agent.evaluate_price(self)
+
+        # Step 1: All agents determine next position.
+        if not self.pricing_only:
+            for agent in self.agents:
+                agent.evaluate_move(self)
+
+        # Step 2: All agents determine next price.
+        if not self.moving_only:
+            for agent in self.agents:
+                agent.evaluate_price(self)
+        
+        # Step 3: All agents apply changes at once.
         for agent in self.agents:
             agent.apply_update()
+
+        # Step 4: Consumers are assigned to stores, and area count is recalculated.
         self._recalculate_area()
+
+        # Step 5: Equilibrium counter is updated.
         self._update_equilibrium_check()
-        self.step_count += 1
+
+        # Step 6: Tick simulation.
+        self.tick += 1
 
 
 if __name__ == "__main__":
@@ -196,5 +214,5 @@ if __name__ == "__main__":
     )  # set up for expermiening
     for _ in range(100):
         sim.step()
-    print(f"Steps run: {sim.step_count}")
+    print(f"Steps run: {sim.tick}")
     print(f"Agents: {[(a.position, a.price) for a in sim.agents]}")

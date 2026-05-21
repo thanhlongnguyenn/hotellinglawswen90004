@@ -42,12 +42,6 @@ class Store(MarketAgent):
         and caches the one with the highest hypothetical market share.
         """
 
-        # Store should not move if we're in a pricing-only scenario
-        # TODO: Do we want to selectively run `evaluate_XXX()` in the Simulation based on rules
-        if sim.pricing_only:
-            self.next_position = self.position
-            return
-
         x, y = self.position
         cardinal_moves = [(x, y+1), (x, y-1), (x+1, y), (x-1, y)]
         
@@ -84,12 +78,6 @@ class Store(MarketAgent):
         Evaluates changing price by -1 or +1 and caches the price that maximises
         revenue.
         """
-
-        # Store should not change price if we're in a moving-only scenario
-        # TODO: Do we want to selectively run `evaluate_XXX()` in the Simulation based on rules
-        if sim.moving_only:
-            self.next_price = self.price
-            return
 
         # Status quo is placed first to win ties. Shuffle others to have equal chances.
         alternatives = [self.price - 1, self.price + 1]
