@@ -1,46 +1,6 @@
 import multiprocessing
 import log_utils
-from simulation import Simulation
-
-
-def experiment_one(params):
-    """Experiment 1 test case runner for multiprocessing.
-
-    Args:
-        params (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-
-    run_id, max_ticks, num_store, rule, layout = params
-
-    # Build simulation environment.
-    sim = Simulation(
-        number_of_stores=num_store,
-        rules=rule,
-        layout=layout,
-    )
-
-    # Execute test iteration.
-    for _ in range(max_ticks):
-        sim.step()
-    print(f"Completed: Num stores: {num_store}, Layout: {layout}, Rule: {rule}")
-
-    # Build results.
-    state: dict = sim.export_state()
-    results = [
-        run_id,
-        layout,
-        num_store,
-        rule,
-        state["step"],
-        log_utils.serialise_list(state["store-positions"]),
-        log_utils.serialise_list(state["store-market-shares"]),
-        log_utils.serialise_list(state["store-prices"]),
-    ]
-    return results
-
+from simulation import run_simulation_experiment
 
 if __name__ == "__main__":
     """EXPERIMENT 1: Python Model Validation
@@ -90,7 +50,7 @@ if __name__ == "__main__":
     try:
         # Run test cases on multiple cores.
         with multiprocessing.Pool() as pool:
-            results = list(pool.imap_unordered(experiment_one, test_case))
+            results = list(pool.imap_unordered(run_simulation_experiment, test_case))
 
         # Write logs to files
         for result in results:

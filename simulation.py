@@ -1,5 +1,6 @@
 import random
 from typing import TYPE_CHECKING, Dict, List, Literal, Tuple
+import log_utils
 
 if TYPE_CHECKING:
     from consumer import Consumer
@@ -121,10 +122,10 @@ class Simulation:
     ) -> int:
         """Calculates the hypothetical market share for an agent with a given position
         and price with all other agents unchanged.
-        
+
         Mirrors Netlogo's 'potential-market-share' and 'market-share-if-moveto'
         procedures together.
-        
+
         Args:
             store_id (int): The ID of the agent.
             hypothetical_pos (Tuple[int, int]): Hypothetical position of the agent.
@@ -152,7 +153,7 @@ class Simulation:
         # Consumers evaluate market share.
         hypothetical_market_share: int = 0
         for consumer in self.consumers:
-            if (consumer.choose_store(self.agents) == specified_agent):
+            if consumer.choose_store(self.agents) == specified_agent:
                 hypothetical_market_share += 1
 
         # Move back to current position and price.
@@ -228,7 +229,7 @@ class Simulation:
 
         # Step 6: Tick simulation.
         self.step_count += 1
-    
+
     def export_state(self) -> Dict:
         """Export the state of the simulation.
 
@@ -243,10 +244,14 @@ class Simulation:
         for s in self.agents:
             store_positions.append([s._id, s.position[0], s.position[1]])
             store_prices.append([s._id, s.price])
-            store_market_share.append([
-                s._id,
-                self.calculate_hypothetical_market_share(s._id, s.position, s.price)
-            ])
+            store_market_share.append(
+                [
+                    s._id,
+                    self.calculate_hypothetical_market_share(
+                        s._id, s.position, s.price
+                    ),
+                ]
+            )
 
         return {
             "step": self.step_count,
@@ -256,11 +261,40 @@ class Simulation:
         }
 
 
-if __name__ == "__main__":
+def run_simulation_experiment(params):
+    """Simulation test case runner.
+
+    Args:
+        params (Tuple): Parameters to execution a simulation with.
+
+    Returns:
+        List[str]: Simulation results.
+    """
+
+    run_id, max_ticks, num_store, rule, layout = params
+
+    # Build simulation environment.
     sim = Simulation(
-        number_of_stores=3, layout="plane", rules="normal"
-    )  # set up for expermiening
-    for _ in range(100):
+        number_of_stores=num_store,
+        rules=rule,
+        layout=layout,
+    )
+
+    # Execute test iteration.
+    for _ in range(max_ticks):
         sim.step()
-    print(f"Steps run: {sim.step_count}")
-    print(f"Agents: {[(a.position, a.price) for a in sim.agents]}")
+    print(f"Completed: Num stores: {num_store}, Layout: {layout}, Rule: {rule}")
+
+    # Build results.
+    state: dict = sim.export_state()
+    results = [
+        run_id,
+        layout,
+        num_store,
+        rule,
+        state["step"],
+        log_utils.serialise_list(state["store-positions"]),
+        log_utils.serialise_list(state["store-market-shares"]),
+        log_utils.serialise_list(state["store-prices"]),
+    ]
+    return results
