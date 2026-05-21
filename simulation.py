@@ -228,6 +228,32 @@ class Simulation:
 
         # Step 6: Tick simulation.
         self.step_count += 1
+    
+    def export_state(self) -> Dict:
+        """Export the state of the simulation.
+
+        Returns:
+            Dict: A dictionary containing the current state of the simulation.
+        """
+        store_positions: list[list[int]] = []
+        store_prices: list[list[int]] = []
+        store_market_share: list[list[int]] = []
+
+        # Flatten store state
+        for s in self.agents:
+            store_positions.append([s._id, s.position[0], s.position[1]])
+            store_prices.append([s._id, s.price])
+            store_market_share.append([
+                s._id,
+                self.calculate_hypothetical_market_share(s._id, s.position, s.price)
+            ])
+
+        return {
+            "step": self.step_count,
+            "store-positions": store_positions,
+            "store-market-shares": store_market_share,
+            "store-prices": store_prices,
+        }
 
 
 if __name__ == "__main__":
