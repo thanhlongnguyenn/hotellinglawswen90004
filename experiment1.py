@@ -56,7 +56,8 @@ if __name__ == "__main__":
 
         # Write logs to files
         for result in results:
-            csv_writer.writerow(result)
+            for entry in result:
+                csv_writer.writerow(entry)
 
     except KeyboardInterrupt:
         pass

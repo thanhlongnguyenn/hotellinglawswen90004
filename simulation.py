@@ -281,20 +281,24 @@ def run_simulation_experiment(params):
     )
 
     # Execute test iteration.
+    results = []
     for _ in range(max_ticks):
         sim.step()
+
+        # Store entry results
+        state: dict = sim.export_state()
+        results.append([
+            run_id,
+            layout,
+            num_store,
+            rule,
+            state["step"],
+            log_utils.serialise_list(state["store-positions"]),
+            log_utils.serialise_list(state["store-market-shares"]),
+            log_utils.serialise_list(state["store-prices"]),
+        ])
+
     print(f"Completed: Num stores: {num_store}, Layout: {layout}, Rule: {rule}")
 
     # Build results.
-    state: dict = sim.export_state()
-    results = [
-        run_id,
-        layout,
-        num_store,
-        rule,
-        state["step"],
-        log_utils.serialise_list(state["store-positions"]),
-        log_utils.serialise_list(state["store-market-shares"]),
-        log_utils.serialise_list(state["store-prices"]),
-    ]
     return results
