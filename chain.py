@@ -12,10 +12,15 @@ class Chain(MarketAgent):
     movements and pricing strategies collectively to maximise chain outcomes.
     """
 
-    def __init__(self, agent_id: int, area_count: int, stores: List[Store]):
-        super().__init__(agent_id, area_count)
+    def __init__(self, agent_id: int, stores: List[Store]):
+        super().__init__(agent_id)
 
         self.controlled_stores: List[Store] = stores
+
+    @property
+    def _area_count(self) -> int:
+        """Dynamically aggregate market share from controlled stores."""
+        return sum(store._area_count for store in self.controlled_stores)
 
     def evaluate_move(self, sim: Simulation):
         """

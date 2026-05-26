@@ -107,7 +107,7 @@ class Simulation:
             [c.position for c in self.consumers], number_of_stores
         )
         for i, pos in enumerate(positions):
-            stores.append(Store(agent_id=i, area_count=0, position=pos, price=10))
+            stores.append(Store(agent_id=i, position=pos, price=10))
 
         return stores
 
@@ -144,7 +144,6 @@ class Simulation:
             for i in range(number_of_chains):
                 agents.append(Chain(
                     agent_id=-i,
-                    area_count=0,
                     stores=self.stores[i::number_of_chains]
                 ))
 
@@ -178,13 +177,12 @@ class Simulation:
         """
 
         # Reset area counter.
-        for agent in self.stores:
-            agent._area_count = 0 # TODO: Add setter for chains to reset controlled stores?
+        for store in self.stores:
+            store._area_count = 0
 
         # Update consumer preferred store, and area count.
         for consumer in self.consumers:
             consumer.choose_store(self.stores)._area_count += 1
-            # TODO: Update chain area counts or implement property to calculate on demand?
 
     def calculate_hypothetical_market_share(
         self,
@@ -330,6 +328,11 @@ class Simulation:
         store_positions: list[list[int]] = []
         store_prices: list[list[int]] = []
         store_market_share: list[list[int]] = []
+
+        # TODO: How do we want to export chain information?
+        # Could define properties to return lists of store positions/prices/market
+        # shares for each chain and export state in terms of market agents rather than
+        # stores?
 
         # Flatten store state
         for s in self.stores:

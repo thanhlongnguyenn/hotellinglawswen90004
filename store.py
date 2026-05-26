@@ -15,21 +15,18 @@ class Store(MarketAgent):
         next_price (int): The buffered price the store will charge.
     """
 
-    def __init__(self, agent_id: int, area_count: int, position: Tuple[int, int],
+    def __init__(self, agent_id: int, position: Tuple[int, int],
         price: int):
         """
-        Initialises the Store with a unique identifier, its current market share
-        (area count), and initial position and price.
+        Initialises the Store with a unique identifier and initial position and price.
         
         Args:
             agent_id (int): Unique identifier for the Store.
-            area_count (int): The number of consumer "patches" currently served by
-                this store, representing its market share.
             position (Tuple[int, int]): The (x, y) coordinates of the store's location.
             price (int): The initial price the store charges.
         """
 
-        super().__init__(agent_id, area_count)
+        super().__init__(agent_id)
         
         self.position: Tuple[int, int] = position
         self.price: int = price
