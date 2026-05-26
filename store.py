@@ -50,11 +50,11 @@ class Store(MarketAgent):
             move for move in cardinal_moves if sim.is_valid_consumer_position(move)
         ]
 
+        random.shuffle(possible_moves) # Shuffle to prevent bias for tie-breaks
+
         # If we have market share, the status quo is favored in case of ties
         if self._area_count > 0:
-            possible_moves.insert(0, self.position)
-        else:
-            random.shuffle(possible_moves) # Shuffle to prevent bias for tie-breaks
+            possible_moves.insert(0, self.position)  
 
         best_move = self.position
         max_market_share = -1
