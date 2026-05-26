@@ -63,8 +63,7 @@ class Store(MarketAgent):
         for move in possible_moves:
             hypothetical_share = sim.calculate_hypothetical_market_share(
                 store_id=self._id,
-                hypothetical_pos=move,
-                hypothetical_price=self.price
+                hypothetical_changes=[(self._id, move, self.price)]
             )
 
             if hypothetical_share > max_market_share:
@@ -91,8 +90,7 @@ class Store(MarketAgent):
         for target_price in possible_prices:
             hypothetical_share = sim.calculate_hypothetical_market_share(
                 store_id=self._id,
-                hypothetical_pos=self.position,
-                hypothetical_price=target_price
+                hypothetical_changes=[(self._id, self.position, target_price)]
             )
             revenue = hypothetical_share * target_price
             
