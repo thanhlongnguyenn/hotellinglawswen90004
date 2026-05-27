@@ -97,12 +97,38 @@ def plot_comparison(py_agg: pd.DataFrame, nl_agg: pd.DataFrame):
             plt.Line2D([0], [0], color="darkorange", label="NetLogo"),
         ]
         fig.legend(handles=handles, loc="lower center", ncol=2)
-        plt.tight_layout(rect=[0, 0.05, 1, 1])
+        plt.tight_layout(rect=(0, 0.05, 1, 1))
         filename = f"comparison_{metric}.png"
         plt.savefig(os.path.join(output_directory, filename))
         print(f"Saved: {filename}")
         plt.close()
 
+def plot_diff(py_agg: pd.DataFrame, nl_agg: pd.DataFrame):
+    diff_agg = pd.merge(py_agg, nl_agg, on=["layout", "rules", "number-of-stores", "[step]"], suffixes=["_py", "_nl"])
+    diff_agg["diff_avg_pairwise_dist"] = diff_agg["avg_pairwise_dist_nl"] - diff_agg["avg_pairwise_dist_py"]
+    diff_agg["diff_avg_price_diff"] = diff_agg["avg_price_diff_nl"] - diff_agg["avg_price_diff_py"]
+
+    for metric, ylabel in [("diff_avg_pairwise_dist", "Avg Pairwise Distance Difference"), ("diff_avg_price_diff", "Avg Pairwise Price Diff Difference")]:
+        fig, axes = plt.subplots(2, 3, figsize=(15, 8), sharey=False)
+        fig.suptitle(f"Python vs NetLogo — {ylabel}")
+
+        for row, layout in enumerate(LAYOUTS):
+            for col, rule in enumerate(RULES):
+                ax = axes[row][col]
+                for n in STORE_COUNTS:
+                    diff_data = diff_agg[(diff_agg["layout"] == layout) & (diff_agg["rules"] == rule) & (diff_agg["number-of-stores"] == n)]
+                    ax.plot(diff_data["[step]"], diff_data[metric], label=f"{n} stores", alpha=0.5, linewidth=0.8)
+                ax.set_title(f"{layout} / {rule}")
+                ax.set_xlabel("Step")
+                ax.set_ylabel(ylabel)
+                ax.legend(fontsize=6)
+
+        # shared legend
+        plt.tight_layout()
+        filename = f"comparison_{metric}.png"
+        plt.savefig(os.path.join(output_directory, filename))
+        print(f"Saved: {filename}")
+        plt.close()
 
 if __name__ == "__main__":
     # Read command line arguments
@@ -113,12 +139,7 @@ if __name__ == "__main__":
 
     # Load datasets
     py_df = pd.read_csv(python_filepath, skiprows=6)
-
     nl_df = pd.read_csv(netlogo_filepath, skiprows=6)
-
-    print(py_df.head(10))
-    print("------------------")
-    print(nl_df.head(10))
 
     # Compute pairwise metrics
     print("Computing Python metrics...")
@@ -137,5 +158,6 @@ if __name__ == "__main__":
 
     # Plot Python vs NetLogo comparison
     plot_comparison(py_agg, nl_agg)
+    plot_diff(py_agg, nl_agg)
 
     print("Done.")
