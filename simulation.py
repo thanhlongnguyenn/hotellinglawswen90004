@@ -39,8 +39,8 @@ class Simulation:
         height: int = 41,
     ):
         self.layout: str = layout
-        self.pricing_only: bool = rules == "pricing-only"
-        self.moving_only: bool = rules == "moving-only"
+        self.pricing_only: bool = (rules == "pricing-only")
+        self.moving_only: bool = (rules == "moving-only")
         self.width: int = width
         self.height: int = height
         self.step_count: int = 0
@@ -344,7 +344,7 @@ def run_simulation_experiment(params):
         List[str]: Simulation results.
     """
 
-    run_id, max_ticks, num_store, rule, layout = params
+    run_id, max_ticks, num_store, layout, rule = params
 
     # Build simulation environment.
     sim = Simulation(

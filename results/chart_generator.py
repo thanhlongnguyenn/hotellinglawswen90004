@@ -113,7 +113,6 @@ if __name__ == "__main__":
 
     # Load datasets
     py_df = pd.read_csv(python_filepath, skiprows=6)
-    py_df = py_df.rename(columns={"layout": "rules", "rules": "layout"})
 
     nl_df = pd.read_csv(netlogo_filepath, skiprows=6)
 
