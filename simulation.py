@@ -5,6 +5,7 @@ import log_utils
 if TYPE_CHECKING:
     from consumer import Consumer
     from store import Store
+    from chain import Chain
     from market_agent import MarketAgent
 
 
@@ -35,6 +36,7 @@ class Simulation:
         mode: Literal["store", "chain"] = "store",
         number_of_stores: int = 3,
         number_of_chains: int = 0,
+        chain_allocations: list[int] = [],
         width: int = 41,
         height: int = 41,
     ):
@@ -55,7 +57,7 @@ class Simulation:
         # Setup our consumers, stores, and market agents.
         self.consumers: List["Consumer"] = self._setup_consumers()
         self.stores: List["Store"] = self._setup_stores(number_of_stores)
-        self.agents: List["MarketAgent"] = self._setup_agents(mode, number_of_chains)
+        self.agents: List["MarketAgent"] = self._setup_agents(mode, number_of_chains, chain_allocations)
 
         # Snapshot of each agent's position and price for equilibrium tracking,
         # mirroring NetLogo's prev-xcor / prev-ycor / prev-price turtle variables.
@@ -111,12 +113,16 @@ class Simulation:
 
         return stores
 
-    def _setup_agents(self, mode: str, number_of_chains: int) -> List["MarketAgent"]:
+    def _setup_agents(self, mode: str, number_of_chains: int, chain_allocations: list[int]) -> List["MarketAgent"]:
         """Setup market agents for running the simulation.
 
         Args:
             mode (str): Mode that the simulation is running in.
             number_of_chains (int): Number of chains to include in simulation.
+            chain_allocations (list[int]): A list of integers specifying how many
+                stores should be allocated to each chain. The length of this list
+                should be equal to number_of_chains, and the sum should be equal to
+                the total number of stores.
 
         Raises:
             RuntimeError: Invalid inputs for mode and number of stores/chains provided.
@@ -139,13 +145,30 @@ class Simulation:
             # Validate inputs for chain mode.
             if number_of_chains == 0:
                 raise RuntimeError("Must specify at least 1 chain.")
+            if sum(chain_allocations) > len(self.stores):
+                raise RuntimeError("Chain allocations exceed total number of stores.")
+            if len(chain_allocations) != number_of_chains:
+                raise RuntimeError("Length of chain_allocations must match number_of_chains.")
+            
+            # Assign stores to chains according to the provided chain_allocations list
+            assigned_stores: Set["Store"] = set()
+            store_pool = self.stores.copy()
 
-            # Partition stores into nearly equal groups.
-            for i in range(number_of_chains):
+            for i, num_to_allocate in enumerate(chain_allocations):
+                # Pull the requested number of stores out of the pool for this chain
+                chain_stores = [store_pool.pop(0) for _ in range(num_to_allocate)]
+                
                 agents.append(Chain(
-                    agent_id=-i,
-                    stores=self.stores[i::number_of_chains]
+                    agent_id=-(i + 1),
+                    stores=chain_stores
                 ))
+
+                assigned_stores.update(chain_stores)
+
+            # Any remaining stores are independent agents
+            for store in self.stores:
+                if store not in assigned_stores:
+                    agents.append(store)
 
         else:
             raise RuntimeError("Invalid mode provided.")
@@ -325,14 +348,11 @@ class Simulation:
         Returns:
             Dict: A dictionary containing the current state of the simulation.
         """
+        from chain import Chain
+
         store_positions: list[list[int]] = []
         store_prices: list[list[int]] = []
         store_market_share: list[list[int]] = []
-
-        # TODO: How do we want to export chain information?
-        # Could define properties to return lists of store positions/prices/market
-        # shares for each chain and export state in terms of market agents rather than
-        # stores?
 
         # Flatten store state
         for s in self.stores:
@@ -342,16 +362,25 @@ class Simulation:
                 [
                     s._id,
                     self.calculate_hypothetical_market_share(
-                        s._id, s.position, s.price
+                        store_id=s._id,
+                        hypothetical_changes=[(s._id, s.position, s.price)]
                     ),
                 ]
             )
+
+        # Flatten chain state
+        store_chain_ids: list[list[int]] = []
+        for a in self.agents:
+            if isinstance(a, Chain):
+                for s in a.controlled_stores:
+                    store_chain_ids.append([s._id, a._id])
 
         return {
             "step": self.step_count,
             "store-positions": store_positions,
             "store-market-shares": store_market_share,
             "store-prices": store_prices,
+            "store-chain-ids": store_chain_ids,
         }
 
 
@@ -365,13 +394,16 @@ def run_simulation_experiment(params):
         List[str]: Simulation results.
     """
 
-    run_id, max_ticks, num_store, layout, rule = params
+    run_id, max_ticks, num_store, layout, rule, num_chains, mode, chain_allocations = params
 
     # Build simulation environment.
     sim = Simulation(
         number_of_stores=num_store,
         rules=rule,
         layout=layout,
+        mode=mode,
+        number_of_chains=num_chains,
+        chain_allocations=chain_allocations,
     )
 
     # Execute test iteration.
@@ -390,6 +422,7 @@ def run_simulation_experiment(params):
             log_utils.serialise_list(state["store-positions"]),
             log_utils.serialise_list(state["store-market-shares"]),
             log_utils.serialise_list(state["store-prices"]),
+            log_utils.serialise_list(state["store-chain-ids"]),
         ])
 
     print(f"Completed: Num stores: {num_store}, Layout: {layout}, Rule: {rule}")

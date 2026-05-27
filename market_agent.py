@@ -23,7 +23,11 @@ class MarketAgent(ABC):
             agent_id (int): Unique identifier for the MarketAgent.
         """
         self._id: int = agent_id
-        self._area_count: int = 0
+
+        # Only set if the class hasn't overridden it with a property descriptor
+        if (not hasattr(type(self), '_area_count')
+            or not isinstance(getattr(type(self), '_area_count'), property)):
+            self._area_count: int = 0
 
     @abstractmethod
     def evaluate_move(self, sim: Simulation):
