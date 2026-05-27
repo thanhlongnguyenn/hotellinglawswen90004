@@ -9,9 +9,6 @@
       <metric>[(list who price)] of turtles</metric>
     </metrics>
     <constants>
-      <enumeratedValueSet variable="random-seed">
-        <value value="42"></value>
-      </enumeratedValueSet>
       <enumeratedValueSet variable="layout">
         <value value="&quot;plane&quot;"></value>
         <value value="&quot;line&quot;"></value>
