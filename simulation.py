@@ -314,7 +314,7 @@ class Simulation:
         store_market_share: list[list[int]] = []
 
         # Flatten store state
-        for s in self.agents:
+        for s in self.stores:
             store_positions.append([s._id, s.position[0], s.position[1]])
             store_prices.append([s._id, s.price])
             store_market_share.append(
