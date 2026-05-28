@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-OUTPUT_DIRECTORY = "output/"
+OUTPUT_DIRECTORY = "output/experiment-2"
 os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
 
 LAYOUTS = ["line", "plane"]
