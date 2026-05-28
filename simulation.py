@@ -393,15 +393,7 @@ def run_simulation_experiment(params):
         List[str]: Simulation results.
     """
 
-    if len(params) == 5:
-        # Define only what is needed for experiment 1
-        run_id, max_ticks, num_store, layout, rule = params
-        mode = "store"
-        num_chains = 0
-        chain_allocations = []
-    else:
-        # Define what is needed for experiment 2
-        run_id, max_ticks, num_store, layout, rule, num_chains, mode, chain_allocations = params
+    run_id, max_ticks, num_store, layout, rule, num_chains, mode, chain_allocations = params
 
     # Build simulation environment.
     sim = Simulation(
@@ -430,12 +422,9 @@ def run_simulation_experiment(params):
             log_utils.serialise_list(state["store-positions"]),
             log_utils.serialise_list(state["store-market-shares"]),
             log_utils.serialise_list(state["store-prices"]),
+            log_utils.serialise_list(state["store-chain-ids"]),
         ]
 
-        # Only include chain information for experiment 2
-        if len(params) == 8:
-            row_entry.append(log_utils.serialise_list(state["store-chain-ids"]))
-            
         results.append(row_entry)
 
     print(f"Completed: Num stores: {num_store}, Layout: {layout}, Rule: {rule}")
