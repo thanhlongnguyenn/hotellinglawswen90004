@@ -1,5 +1,5 @@
 import random
-from typing import TYPE_CHECKING, Dict, List, Literal, Tuple
+from typing import TYPE_CHECKING, Dict, List, Literal, Set, Tuple
 import log_utils
 
 if TYPE_CHECKING:
@@ -35,6 +35,7 @@ class Simulation:
         mode: Literal["store", "chain"] = "store",
         number_of_stores: int = 3,
         number_of_chains: int = 0,
+        chain_allocations: list[int] = [],
         width: int = 41,
         height: int = 41,
     ):
@@ -55,7 +56,7 @@ class Simulation:
         # Setup our consumers, stores, and market agents.
         self.consumers: List["Consumer"] = self._setup_consumers()
         self.stores: List["Store"] = self._setup_stores(number_of_stores)
-        self.agents: List["MarketAgent"] = self._setup_agents(mode, number_of_chains)
+        self.agents: List["MarketAgent"] = self._setup_agents(mode, number_of_chains, chain_allocations)
 
         # Snapshot of each agent's position and price for equilibrium tracking,
         # mirroring NetLogo's prev-xcor / prev-ycor / prev-price turtle variables.
@@ -107,16 +108,20 @@ class Simulation:
             [c.position for c in self.consumers], number_of_stores
         )
         for i, pos in enumerate(positions):
-            stores.append(Store(agent_id=i, area_count=0, position=pos, price=10))
+            stores.append(Store(agent_id=i, position=pos, price=10))
 
         return stores
 
-    def _setup_agents(self, mode: str, number_of_chains: int) -> List["MarketAgent"]:
+    def _setup_agents(self, mode: str, number_of_chains: int, chain_allocations: list[int]) -> List["MarketAgent"]:
         """Setup market agents for running the simulation.
 
         Args:
             mode (str): Mode that the simulation is running in.
             number_of_chains (int): Number of chains to include in simulation.
+            chain_allocations (list[int]): A list of integers specifying how many
+                stores should be allocated to each chain. The length of this list
+                should be equal to number_of_chains, and the sum should be equal to
+                the total number of stores.
 
         Raises:
             RuntimeError: Invalid inputs for mode and number of stores/chains provided.
@@ -139,14 +144,30 @@ class Simulation:
             # Validate inputs for chain mode.
             if number_of_chains == 0:
                 raise RuntimeError("Must specify at least 1 chain.")
+            if sum(chain_allocations) > len(self.stores):
+                raise RuntimeError("Chain allocations exceed total number of stores.")
+            if len(chain_allocations) != number_of_chains:
+                raise RuntimeError("Length of chain_allocations must match number_of_chains.")
+            
+            # Assign stores to chains according to the provided chain_allocations list
+            assigned_stores: Set["Store"] = set()
+            store_pool = self.stores.copy()
 
-            # Partition stores into nearly equal groups.
-            for i in range(number_of_chains):
+            for i, num_to_allocate in enumerate(chain_allocations):
+                # Pull the requested number of stores out of the pool for this chain
+                chain_stores = [store_pool.pop(0) for _ in range(num_to_allocate)]
+                
                 agents.append(Chain(
-                    agent_id=-i,
-                    area_count=0,
-                    stores=self.stores[i::number_of_chains]
+                    agent_id=-(i + 1),
+                    stores=chain_stores
                 ))
+
+                assigned_stores.update(chain_stores)
+
+            # Any remaining stores are independent agents
+            for store in self.stores:
+                if store not in assigned_stores:
+                    agents.append(store)
 
         else:
             raise RuntimeError("Invalid mode provided.")
@@ -178,8 +199,8 @@ class Simulation:
         """
 
         # Reset area counter.
-        for agent in self.stores:
-            agent._area_count = 0
+        for store in self.stores:
+            store._area_count = 0
 
         # Update consumer preferred store, and area count.
         for consumer in self.consumers:
@@ -188,50 +209,67 @@ class Simulation:
     def calculate_hypothetical_market_share(
         self,
         store_id: int,
-        hypothetical_pos: Tuple[int, int],
-        hypothetical_price: int,
+        hypothetical_changes: List[Tuple[int, Tuple[int, int], int]]
     ) -> int:
-        """Calculates the hypothetical market share for an agent with a given position
-        and price with all other agents unchanged.
+        """
+        Calculates the hypothetical market share for an agent given a set of 
+        hypothetical changes to the simulation state (store positions and prices),
+        with all other unlisted agents remaining unchanged.
 
 
-        Mirrors Netlogo's 'potential-market-share' and 'market-share-if-moveto'
-        procedures together.
+        Able to mirrot Netlogo's 'potential-market-share' and 'market-share-if-moveto'
+        procedures together (with a single store-hypothetical input).
 
+        Also supports batch evaluation for chains.
 
         Args:
             store_id (int): The ID of the agent.
-            hypothetical_pos (Tuple[int, int]): Hypothetical position of the agent.
-            hypothetical_price (Tuple[int, int]): Hypothetical price of the agent.
+            hypothetical_changes (List[Tuple[int, Tuple[int, int], int]]): A list of
+                tuples containing hypothetical changes to the simulation state in
+                the form (store_id, (new_x, new_y), new_price).
 
         Returns:
-            Integer representing the hypothetical market share for the provided
-            agent, position, and price.
+            Integer representing the hypothetical market share for the provided agent
+            given the hypothetical changes.
         """
 
-        # Find agent with given id.
-        my_store = None
+        original_states: Dict[Store, Tuple[Tuple[int, int], int]] = {}
+        target_store_instance = None
+
+        for hyp_id, hyp_pos, hyp_price in hypothetical_changes:
+            target_store = None
+            for store in self.stores:
+                if store._id == hyp_id:
+                    target_store = store
+                    break
+            assert target_store is not None
+
+            # Store original position and price for later restoration
+            if target_store not in original_states:
+                original_states[target_store] = (
+                    target_store.position,
+                    target_store.price
+                )
+
+            # Change the store to have the hypothetical state
+            target_store.position = hyp_pos
+            target_store.price = hyp_price
+
         for store in self.stores:
             if store._id == store_id:
-                my_store = store
+                target_store_instance = store
                 break
-        assert my_store is not None
+        assert target_store_instance is not None
 
-        # Move agent to hypothetical position and price.
-        current_position: Tuple[int, int] = my_store.position
-        my_store.position = hypothetical_pos
-        current_price: int = my_store.price
-        my_store.price = hypothetical_price
-
-        # Consumers evaluate market share.
         hypothetical_market_share: int = 0
         for consumer in self.consumers:
-            if consumer.choose_store(self.stores) == my_store:
+            if consumer.choose_store(self.stores) == target_store_instance:
                 hypothetical_market_share += 1
 
-        # Move back to current position and price.
-        my_store.position = current_position
-        my_store.price = current_price
+        # Move every store back to current position and price.
+        for store, (orig_pos, orig_price) in original_states.items():
+            store.position = orig_pos
+            store.price = orig_price
 
         return hypothetical_market_share
 
@@ -309,6 +347,8 @@ class Simulation:
         Returns:
             Dict: A dictionary containing the current state of the simulation.
         """
+        from chain import Chain
+
         store_positions: list[list[int]] = []
         store_prices: list[list[int]] = []
         store_market_share: list[list[int]] = []
@@ -321,16 +361,25 @@ class Simulation:
                 [
                     s._id,
                     self.calculate_hypothetical_market_share(
-                        s._id, s.position, s.price
+                        store_id=s._id,
+                        hypothetical_changes=[(s._id, s.position, s.price)]
                     ),
                 ]
             )
+
+        # Flatten chain state
+        store_chain_ids: list[list[int]] = []
+        for a in self.agents:
+            if isinstance(a, Chain):
+                for s in a.controlled_stores:
+                    store_chain_ids.append([s._id, a._id])
 
         return {
             "step": self.step_count,
             "store-positions": store_positions,
             "store-market-shares": store_market_share,
             "store-prices": store_prices,
+            "store-chain-ids": store_chain_ids,
         }
 
 
@@ -344,13 +393,16 @@ def run_simulation_experiment(params):
         List[str]: Simulation results.
     """
 
-    run_id, max_ticks, num_store, layout, rule = params
+    run_id, max_ticks, num_store, layout, rule, num_chains, mode, chain_allocations = params
 
     # Build simulation environment.
     sim = Simulation(
         number_of_stores=num_store,
         rules=rule,
         layout=layout,
+        mode=mode,
+        number_of_chains=num_chains,
+        chain_allocations=chain_allocations,
     )
 
     # Execute test iteration.
@@ -360,7 +412,8 @@ def run_simulation_experiment(params):
 
         # Store entry results
         state: dict = sim.export_state()
-        results.append([
+
+        row_entry = [
             run_id,
             layout,
             num_store,
@@ -369,7 +422,10 @@ def run_simulation_experiment(params):
             log_utils.serialise_list(state["store-positions"]),
             log_utils.serialise_list(state["store-market-shares"]),
             log_utils.serialise_list(state["store-prices"]),
-        ])
+            log_utils.serialise_list(state["store-chain-ids"]),
+        ]
+
+        results.append(row_entry)
 
     print(f"Completed: Num stores: {num_store}, Layout: {layout}, Rule: {rule}")
 

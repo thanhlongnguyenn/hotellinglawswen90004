@@ -15,18 +15,19 @@ class MarketAgent(ABC):
     _id: int
     _area_count: int
 
-    def __init__(self, agent_id: int, area_count: int):
+    def __init__(self, agent_id: int):
         """
-        Initialises the MarketAgent with a unique identifier and its current market
-        share (area count).
+        Initialises the MarketAgent with a unique identifier.
 
         Args:
             agent_id (int): Unique identifier for the MarketAgent.
-            area_count (int): The number of consumer "patches" currently served by
-                this agent, representing its market share.
         """
         self._id: int = agent_id
-        self._area_count: int = area_count
+
+        # Only set if the class hasn't overridden it with a property descriptor
+        if (not hasattr(type(self), '_area_count')
+            or not isinstance(getattr(type(self), '_area_count'), property)):
+            self._area_count: int = 0
 
     @abstractmethod
     def evaluate_move(self, sim: Simulation):

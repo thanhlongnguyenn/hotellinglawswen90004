@@ -29,6 +29,7 @@ if __name__ == "__main__":
             "store-positions",
             "store-market-shares",
             "store-prices",
+            "store-chain-ids", 
         ]
     )
 
@@ -41,13 +42,15 @@ if __name__ == "__main__":
 
     # Build test cases
     test_case: list[tuple] = []
-    run_counter: int = 1
+    run_id: int = 1
     for run in number_of_runs:
         for num_store in number_of_stores:
             for layout in geographic_space:
                 for rule in rules:
-                    test_case.append((run_counter, max_ticks, num_store, layout, rule))
-                    run_counter += 1
+                    test_case.append(
+                        (run_id, max_ticks, num_store, layout, rule, 0, "store", [])
+                    )
+                    run_id += 1
 
     try:
         # Run test cases on multiple cores.
