@@ -4,7 +4,7 @@ from simulation import run_simulation_experiment
 import random
 
 if __name__ == "__main__":
-    """EXPERIMENT 1: Python Model Validation
+    """EXPERIMENT 1: Python Model Replication
 
     Number of runs: 20
     Number of stores: [2, 3, ..., 9, 10]
