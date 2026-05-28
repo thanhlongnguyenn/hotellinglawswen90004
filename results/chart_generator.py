@@ -5,7 +5,7 @@ import sys
 import os
 import re
 
-output_directory = "output/"
+output_directory = "output/experiment-1/"
 os.makedirs(output_directory, exist_ok=True)
 
 LAYOUTS = ["line", "plane"]
@@ -108,23 +108,43 @@ def plot_diff(py_agg: pd.DataFrame, nl_agg: pd.DataFrame):
     diff_agg["diff_avg_pairwise_dist"] = diff_agg["avg_pairwise_dist_nl"] - diff_agg["avg_pairwise_dist_py"]
     diff_agg["diff_avg_price_diff"] = diff_agg["avg_price_diff_nl"] - diff_agg["avg_price_diff_py"]
 
-    for metric, ylabel in [("diff_avg_pairwise_dist", "Avg Pairwise Distance Difference"), ("diff_avg_price_diff", "Avg Pairwise Price Diff Difference")]:
-        fig, axes = plt.subplots(2, 3, figsize=(15, 8), sharey=False)
+    for metric, ylabel in [("diff_avg_pairwise_dist", "Difference in Avg Pairwise Distance"), ("diff_avg_price_diff", "Difference in Avg Pairwise Price Diff")]:
+        fig, axes = plt.subplots(9, 2, figsize=(8, 10), sharex='col', sharey=False)
         fig.suptitle(f"Python vs NetLogo — {ylabel}")
+        fig.supylabel(ylabel)
 
-        for row, layout in enumerate(LAYOUTS):
-            for col, rule in enumerate(RULES):
+        for row, n in enumerate(STORE_COUNTS):
+            for col, layout in enumerate(LAYOUTS):
+                # Define axes
                 ax = axes[row][col]
-                for n in STORE_COUNTS:
-                    diff_data = diff_agg[(diff_agg["layout"] == layout) & (diff_agg["rules"] == rule) & (diff_agg["number-of-stores"] == n)]
-                    ax.plot(diff_data["[step]"], diff_data[metric], label=f"{n} stores", alpha=0.5, linewidth=0.8)
-                ax.set_title(f"{layout} / {rule}")
-                ax.set_xlabel("Step")
-                ax.set_ylabel(ylabel)
-                ax.legend(fontsize=6)
+                ax.axhline(0, color='black', alpha=0.5, linestyle='-') 
+                ax.set_ylim(-3, 3)
+                ax.set_xlim(0, 500)
+                ax.set_title(f"{n} stores / {layout}")
+
+                # Plot data
+                diff_data = diff_agg[(diff_agg["layout"] == layout) & (diff_agg["number-of-stores"] == n)]
+                normal_data = diff_data[diff_data["rules"] == "normal"]
+                ax.plot(normal_data["[step]"], normal_data[metric], label="normal", linewidth=0.8, color="steelblue")
+                if metric == "diff_avg_pairwise_dist":
+                    moving_only_data = diff_data[diff_data["rules"] == "moving-only"]
+                    ax.plot(moving_only_data["[step]"], moving_only_data[metric], label="moving-only", linewidth=0.8, color="darkorange")
+                if metric == "diff_avg_price_diff":
+                    pricing_only_data = diff_data[diff_data["rules"] == "pricing-only"]
+                    ax.plot(pricing_only_data["[step]"], pricing_only_data[metric], label="pricing-only", linewidth=0.8, color="darkgreen")
+
+                if (n == 10):
+                    ax.set_xlabel("Step")
 
         # shared legend
-        plt.tight_layout()
+        handles = []
+        handles.append(plt.Line2D([0], [0], color="steelblue", label="normal"))
+        if metric == "diff_avg_pairwise_dist":
+            handles.append(plt.Line2D([0], [0], color="darkorange", label="moving-only"))
+        if metric == "diff_avg_price_diff":
+            handles.append(plt.Line2D([0], [0], color="darkgreen", label="pricing-only"))
+        fig.legend(handles=handles, loc="lower center", ncol=2)
+        plt.tight_layout(rect=(0, 0.05, 1, 1))
         filename = f"comparison_{metric}.png"
         plt.savefig(os.path.join(output_directory, filename))
         print(f"Saved: {filename}")
