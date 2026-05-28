@@ -5,7 +5,7 @@ import sys
 import os
 import re
 
-output_directory = "output/"
+output_directory = "output/experiment-1/"
 os.makedirs(output_directory, exist_ok=True)
 
 LAYOUTS = ["line", "plane"]
@@ -97,12 +97,58 @@ def plot_comparison(py_agg: pd.DataFrame, nl_agg: pd.DataFrame):
             plt.Line2D([0], [0], color="darkorange", label="NetLogo"),
         ]
         fig.legend(handles=handles, loc="lower center", ncol=2)
-        plt.tight_layout(rect=[0, 0.05, 1, 1])
+        plt.tight_layout(rect=(0, 0.05, 1, 1))
         filename = f"comparison_{metric}.png"
         plt.savefig(os.path.join(output_directory, filename))
         print(f"Saved: {filename}")
         plt.close()
 
+def plot_diff(py_agg: pd.DataFrame, nl_agg: pd.DataFrame):
+    diff_agg = pd.merge(py_agg, nl_agg, on=["layout", "rules", "number-of-stores", "[step]"], suffixes=["_py", "_nl"])
+    diff_agg["diff_avg_pairwise_dist"] = diff_agg["avg_pairwise_dist_nl"] - diff_agg["avg_pairwise_dist_py"]
+    diff_agg["diff_avg_price_diff"] = diff_agg["avg_price_diff_nl"] - diff_agg["avg_price_diff_py"]
+
+    for metric, ylabel in [("diff_avg_pairwise_dist", "Difference in Avg Pairwise Distance"), ("diff_avg_price_diff", "Difference in Avg Pairwise Price Diff")]:
+        fig, axes = plt.subplots(9, 2, figsize=(8, 10), sharex='col', sharey=False)
+        fig.suptitle(f"Python vs NetLogo — {ylabel}")
+        fig.supylabel(ylabel)
+
+        for row, n in enumerate(STORE_COUNTS):
+            for col, layout in enumerate(LAYOUTS):
+                # Define axes
+                ax = axes[row][col]
+                ax.axhline(0, color='black', alpha=0.5, linestyle='-') 
+                ax.set_ylim(-3, 3)
+                ax.set_xlim(0, 500)
+                ax.set_title(f"{n} stores / {layout}")
+
+                # Plot data
+                diff_data = diff_agg[(diff_agg["layout"] == layout) & (diff_agg["number-of-stores"] == n)]
+                normal_data = diff_data[diff_data["rules"] == "normal"]
+                ax.plot(normal_data["[step]"], normal_data[metric], label="normal", linewidth=0.8, color="steelblue")
+                if metric == "diff_avg_pairwise_dist":
+                    moving_only_data = diff_data[diff_data["rules"] == "moving-only"]
+                    ax.plot(moving_only_data["[step]"], moving_only_data[metric], label="moving-only", linewidth=0.8, color="darkorange")
+                if metric == "diff_avg_price_diff":
+                    pricing_only_data = diff_data[diff_data["rules"] == "pricing-only"]
+                    ax.plot(pricing_only_data["[step]"], pricing_only_data[metric], label="pricing-only", linewidth=0.8, color="darkgreen")
+
+                if (n == 10):
+                    ax.set_xlabel("Step")
+
+        # shared legend
+        handles = []
+        handles.append(plt.Line2D([0], [0], color="steelblue", label="normal"))
+        if metric == "diff_avg_pairwise_dist":
+            handles.append(plt.Line2D([0], [0], color="darkorange", label="moving-only"))
+        if metric == "diff_avg_price_diff":
+            handles.append(plt.Line2D([0], [0], color="darkgreen", label="pricing-only"))
+        fig.legend(handles=handles, loc="lower center", ncol=2)
+        plt.tight_layout(rect=(0, 0.05, 1, 1))
+        filename = f"comparison_{metric}.png"
+        plt.savefig(os.path.join(output_directory, filename))
+        print(f"Saved: {filename}")
+        plt.close()
 
 if __name__ == "__main__":
     # Read command line arguments
@@ -113,12 +159,7 @@ if __name__ == "__main__":
 
     # Load datasets
     py_df = pd.read_csv(python_filepath, skiprows=6)
-
     nl_df = pd.read_csv(netlogo_filepath, skiprows=6)
-
-    print(py_df.head(10))
-    print("------------------")
-    print(nl_df.head(10))
 
     # Compute pairwise metrics
     print("Computing Python metrics...")
@@ -137,5 +178,6 @@ if __name__ == "__main__":
 
     # Plot Python vs NetLogo comparison
     plot_comparison(py_agg, nl_agg)
+    plot_diff(py_agg, nl_agg)
 
     print("Done.")
