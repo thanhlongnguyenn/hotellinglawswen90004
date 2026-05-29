@@ -53,7 +53,7 @@ def aggregate_metrics(df: pd.DataFrame) -> pd.DataFrame:
 def plot_experiment1(agg: pd.DataFrame, source_label: str):
     for metric, ylabel in [("avg_pairwise_dist", "Avg Pairwise Distance"), ("avg_price_diff", "Avg Pairwise Price Diff")]:
         fig, axes = plt.subplots(2, 3, figsize=(15, 8), sharey=False)
-        fig.suptitle(f"{source_label} — {ylabel} (Experiment 1)")
+        fig.suptitle(f"Python Replication: {ylabel} Over Time Ticks", fontsize=14, weight='bold')
 
         for row, layout in enumerate(LAYOUTS):
             for col, rule in enumerate(RULES):
@@ -62,10 +62,11 @@ def plot_experiment1(agg: pd.DataFrame, source_label: str):
                 for n in STORE_COUNTS:
                     run_data = subset[subset["number-of-stores"] == n]
                     ax.plot(run_data["[step]"], run_data[metric], label=f"{n} stores")
-                ax.set_title(f"{layout} / {rule}")
+                ax.set_title(f"Layout: {layout.upper()} | Rule: {rule.upper()}", fontsize=9, weight='semibold')
                 ax.set_xlabel("Step")
                 ax.set_ylabel(ylabel)
-                ax.legend(fontsize=6)
+                ax.grid(True, linestyle="--", alpha=0.5)
+                ax.legend(fontsize=7, loc="best")
 
         plt.tight_layout()
         filename = f"{source_label.lower().replace(' ', '_')}_{metric}.png"
@@ -77,7 +78,7 @@ def plot_experiment1(agg: pd.DataFrame, source_label: str):
 def plot_comparison(py_agg: pd.DataFrame, nl_agg: pd.DataFrame):
     for metric, ylabel in [("avg_pairwise_dist", "Avg Pairwise Distance"), ("avg_price_diff", "Avg Pairwise Price Diff")]:
         fig, axes = plt.subplots(2, 3, figsize=(15, 8), sharey=False)
-        fig.suptitle(f"Python vs NetLogo — {ylabel}")
+        fig.suptitle(f"NetLogo vs Python: {ylabel} Over Time Ticks", fontsize=14, weight='bold')
 
         for row, layout in enumerate(LAYOUTS):
             for col, rule in enumerate(RULES):
@@ -85,11 +86,12 @@ def plot_comparison(py_agg: pd.DataFrame, nl_agg: pd.DataFrame):
                 for n in STORE_COUNTS:
                     py_data = py_agg[(py_agg["layout"] == layout) & (py_agg["rules"] == rule) & (py_agg["number-of-stores"] == n)]
                     nl_data = nl_agg[(nl_agg["layout"] == layout) & (nl_agg["rules"] == rule) & (nl_agg["number-of-stores"] == n)]
-                    ax.plot(py_data["[step]"], py_data[metric], color="steelblue", alpha=0.6, linewidth=0.8)
-                    ax.plot(nl_data["[step]"], nl_data[metric], color="darkorange", alpha=0.6, linewidth=0.8)
-                ax.set_title(f"{layout} / {rule}")
+                    ax.plot(py_data["[step]"], py_data[metric], color="steelblue", alpha=0.6, linewidth=1.0)
+                    ax.plot(nl_data["[step]"], nl_data[metric], color="darkorange", alpha=0.6, linewidth=1.0)
+                ax.set_title(f"Layout: {layout.upper()} | Rule: {rule.upper()}", fontsize=9, weight='semibold')
                 ax.set_xlabel("Step")
                 ax.set_ylabel(ylabel)
+                ax.grid(True, linestyle="--", alpha=0.5)
 
         # shared legend
         handles = [
@@ -110,7 +112,7 @@ def plot_diff(py_agg: pd.DataFrame, nl_agg: pd.DataFrame):
 
     for metric, ylabel in [("diff_avg_pairwise_dist", "Difference in Avg Pairwise Distance"), ("diff_avg_price_diff", "Difference in Avg Pairwise Price Diff")]:
         fig, axes = plt.subplots(9, 2, figsize=(8, 10), sharex='col', sharey=False)
-        fig.suptitle(f"Python vs NetLogo — {ylabel}")
+        fig.suptitle(f"NetLogo vs Python: {ylabel} Over Time Ticks", fontsize=14, weight='bold')
         fig.supylabel(ylabel)
 
         for row, n in enumerate(STORE_COUNTS):
@@ -120,18 +122,21 @@ def plot_diff(py_agg: pd.DataFrame, nl_agg: pd.DataFrame):
                 ax.axhline(0, color='black', alpha=0.5, linestyle='-') 
                 ax.set_ylim(-3, 3)
                 ax.set_xlim(0, 500)
-                ax.set_title(f"{n} stores / {layout}")
+                ax.set_title(f"Layout: {layout.upper()} | Num Stores: {n}", fontsize=9, weight='semibold')
 
                 # Plot data
                 diff_data = diff_agg[(diff_agg["layout"] == layout) & (diff_agg["number-of-stores"] == n)]
                 normal_data = diff_data[diff_data["rules"] == "normal"]
-                ax.plot(normal_data["[step]"], normal_data[metric], label="normal", linewidth=0.8, color="steelblue")
+                ax.plot(normal_data["[step]"], normal_data[metric], label="normal", linewidth=1.0, color="steelblue")
+                ax.grid(True, linestyle="--", alpha=0.5)
                 if metric == "diff_avg_pairwise_dist":
                     moving_only_data = diff_data[diff_data["rules"] == "moving-only"]
-                    ax.plot(moving_only_data["[step]"], moving_only_data[metric], label="moving-only", linewidth=0.8, color="darkorange")
+                    ax.plot(moving_only_data["[step]"], moving_only_data[metric], label="moving-only", linewidth=1.0, color="darkorange")
+                    ax.grid(True, linestyle="--", alpha=0.5)
                 if metric == "diff_avg_price_diff":
                     pricing_only_data = diff_data[diff_data["rules"] == "pricing-only"]
-                    ax.plot(pricing_only_data["[step]"], pricing_only_data[metric], label="pricing-only", linewidth=0.8, color="darkgreen")
+                    ax.plot(pricing_only_data["[step]"], pricing_only_data[metric], label="pricing-only", linewidth=1.0, color="darkgreen")
+                    ax.grid(True, linestyle="--", alpha=0.5)
 
                 if (n == 10):
                     ax.set_xlabel("Step")

@@ -148,7 +148,7 @@ def plot_time_series_metrics(df: pd.DataFrame):
 
     for column_key, ylabel, filename in targets:
         fig, axes = plt.subplots(2, 3, figsize=(16, 9))
-        fig.suptitle(f"Evolution Tracking Profile: {ylabel} Over Time Ticks", fontsize=14, weight='bold')
+        fig.suptitle(f"Chain Behaviour Extension: {ylabel} Over Time Ticks", fontsize=14, weight='bold')
 
         for r_idx, layout in enumerate(LAYOUTS):
             for c_idx, rule in enumerate(RULES):
@@ -161,7 +161,7 @@ def plot_time_series_metrics(df: pd.DataFrame):
                         continue
                     ax.plot(config_data["[step]"], config_data[column_key], label=config, linewidth=1.5)
                 
-                ax.set_title(f"Layout: {layout.upper()} | Strategy: {rule.upper()}", fontsize=9, weight='semibold')
+                ax.set_title(f"Layout: {layout.upper()} | Rule: {rule.upper()}", fontsize=9, weight='semibold')
                 ax.set_xlabel("Ticks", fontsize=8)
                 ax.set_ylabel(ylabel, fontsize=8)
                 ax.grid(True, linestyle="--", alpha=0.5)
