@@ -22,7 +22,6 @@ class Simulation:
         mode (str): "store" for stores only, "chain" for chains mode.
         width (int): Number of patch columns in the world.
         height (int): Number of patch rows in the world.
-        step_count (int): Number of ticks elapsed.
         consumers (List["Consumer"]): All consumer patches.
         stores (List["Store"]): All stores.
         agents (List["MarketAgent"]): All competing market agents.
@@ -45,7 +44,6 @@ class Simulation:
         self.width: int = width
         self.height: int = height
         self.step_count: int = 0
-        self._stable_tick_count: int = 0
 
         # Coordinate bounds centred at origin, matching NetLogo's -20..20 default.
         self._min_x: int = -(width // 2)
@@ -59,12 +57,6 @@ class Simulation:
         self.agents: List["MarketAgent"] = self._setup_agents(
             mode, number_of_chains, chain_allocations
         )
-
-        # Snapshot of each agent's position and price for equilibrium tracking,
-        # mirroring NetLogo's prev-xcor / prev-ycor / prev-price turtle variables.
-        self._prev_state: Dict[int, Tuple[Tuple[int, int], int]] = {
-            a._id: (a.position, a.price) for a in self.stores
-        }
 
         self._recalculate_area()
 
