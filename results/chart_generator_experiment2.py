@@ -10,7 +10,7 @@ os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
 
 LAYOUTS = ["line", "plane"]
 RULES = ["normal", "moving-only", "pricing-only"]
-CONFIGS = ["4 Independent", "1 Chain (2-Store) + 2 Ind", "2 Chains (2x2)"]
+CONFIGS = ["1 Chain (2-Store) + 2 Ind", "2 Chains (2x2)", "4 Independent"]
 
 # -----------------------------------------------------------------------------
 # PARSING UTILITIES
@@ -60,42 +60,47 @@ def compute_chain_metrics(row) -> tuple[float, float]:
     """Calculates intra-chain distance and minimum competitor proximity."""
     pos_map = parse_position(row["store-positions"])
     chain_groups = parse_chains(row["store-chain-ids"])
-    
-    if not chain_groups:
+
+    # Validate store id parsing.
+    store_ids = list(pos_map.keys())
+    if not store_ids:
         return np.nan, np.nan
-    
-    all_chain_stores = [sid for stores in chain_groups.values() for sid in stores]
-    hostile_stores = [sid for sid in pos_map.keys() if sid not in all_chain_stores]
-    
+
+    # Intra-chain distances
     intra_dists = []
-    min_comp_dist = float('inf')
-    
-    for chain_id, store_ids in chain_groups.items():
-        if len(store_ids) >= 2:
-            for i in range(len(store_ids)):
-                for j in range(i + 1, len(store_ids)):
-                    p1, p2 = pos_map[store_ids[i]], pos_map[store_ids[j]]
+    for chain_id, chain_store_ids in chain_groups.items():
+        if len(chain_store_ids) >= 2:
+            for i in range(len(chain_store_ids)):
+                for j in range(i + 1, len(chain_store_ids)):
+                    p1, p2 = pos_map[chain_store_ids[i]], pos_map[chain_store_ids[j]]
                     intra_dists.append(np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2))
-                    
-        for s_id in store_ids:
-            p_curr = pos_map[s_id]
-            for h_id in hostile_stores:
-                p_hostile = pos_map[h_id]
-                dist = np.sqrt((p_curr[0]-p_hostile[0])**2 + (p_curr[1]-p_hostile[1])**2)
-                if dist < min_comp_dist:
-                    min_comp_dist = dist
-            for other_chain_id, other_store_ids in chain_groups.items():
-                if other_chain_id != chain_id:
-                    for o_id in other_store_ids:
-                        p_rival = pos_map[o_id]
-                        dist = np.sqrt((p_curr[0]-p_rival[0])**2 + (p_curr[1]-p_rival[1])**2)
-                        if dist < min_comp_dist:
-                            min_comp_dist = dist
+
+    # Map each store to its chain id (None for independent)
+    store_to_chain = {s: cid for cid, stores in chain_groups.items() for s in stores}
+
+    # For every store, compute distance to nearest competitor defined as ANY store
+    # that is not in the same chain. For independent stores (no chain id), competitors
+    # are all other stores.
+    nearest_comp_by_store = []
+    for s in list(pos_map.keys()):
+        p_s = pos_map[s]
+        same_chain = store_to_chain.get(s, None)
+
+        if same_chain is None:
+            competitors = [t for t in store_ids if t != s]
+        else:
+            competitors = [t for t in store_ids if t != s and store_to_chain.get(t, None) != same_chain]
+        assert len(competitors) != 0
+        
+        min_d = min(
+            np.sqrt((p_s[0]-pos_map[t][0])**2 + (p_s[1]-pos_map[t][1])**2) for t in competitors
+        )
+        nearest_comp_by_store.append(float(min_d))
 
     avg_intra = float(np.mean(intra_dists)) if intra_dists else np.nan
-    final_min_comp = float(min_comp_dist) if min_comp_dist != float('inf') else np.nan
-    
-    return avg_intra, final_min_comp
+    avg_min_comp = float(np.mean(nearest_comp_by_store)) if nearest_comp_by_store else np.nan
+
+    return avg_intra, avg_min_comp
 
 # -----------------------------------------------------------------------------
 # PLOTTING ENGINES
