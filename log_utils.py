@@ -9,6 +9,9 @@ from datetime import datetime
 def create_log_file(experiment_name: str):
     """Create a CSV file that is compatible with NetLogo Table Version 2.0.
 
+    Args:
+        experiment_name (str): The name of the experiment to log.
+
     Returns:
         Tuple of (csv_file, csv_writer) where csv_file is the opened file object and
         csv_writer is the csv.writer object for writing to the file.
@@ -36,6 +39,12 @@ def serialise_list(a_list) -> str:
 
     Example:
         [[1, 2, 3], 2, 3] -> [[1 2 3] 2 3]
+
+    Args:
+        a_list (List): A list containing nested lists.
+
+    Returns:
+        str: The list serialised into a string format.
     """
     first_elem: bool = True
     out = "["

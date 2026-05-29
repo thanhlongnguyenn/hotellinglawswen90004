@@ -37,6 +37,9 @@ class Store(MarketAgent):
         """
         Considers a unit step in 4 cardinal directions on valid consumer patches
         and caches the one with the highest hypothetical market share.
+
+        Args:
+            sim (Simulation): Simulation to evaluate move against.
         """
 
         x, y = self.position
@@ -72,6 +75,9 @@ class Store(MarketAgent):
         """
         Evaluates changing price by -1 or +1 and caches the price that maximises
         revenue.
+
+        Args:
+            sim (Simulation): Simulation to evaluate price change against.
         """
 
         # Status quo is placed first to win ties. Shuffle others to have equal chances.

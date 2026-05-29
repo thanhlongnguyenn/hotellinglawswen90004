@@ -16,16 +16,16 @@ class Simulation:
     or Chains), advancing the simulation one tick at a time via `step`.
 
     Attributes:
-        layout (str): "plane" for 2-D grid, "line" for 1-D column (pxcor=0).
+        layout (str): "plane" for 2-D grid, "line" for 1-D column.
         pricing_only (bool): Stores may only change prices, not move.
         moving_only (bool): Stores may only move, not change prices.
         mode (str): "store" for stores only, "chain" for chains mode.
         width (int): Number of patch columns in the world.
         height (int): Number of patch rows in the world.
         step_count (int): Number of ticks elapsed.
-        consumers (List[""Consumer""]): All consumer patches.
+        consumers (List["Consumer"]): All consumer patches.
         stores (List["Store"]): All stores.
-        agents (List[""MarketAgent""]): All competing market agents.
+        agents (List["MarketAgent"]): All competing market agents.
     """
 
     def __init__(
@@ -220,11 +220,8 @@ class Simulation:
         hypothetical changes to the simulation state (store positions and prices),
         with all other unlisted agents remaining unchanged.
 
-
-        Able to mirrot Netlogo's 'potential-market-share' and 'market-share-if-moveto'
+        Able to mirror Netlogo's 'potential-market-share' and 'market-share-if-moveto'
         procedures together (with a single store-hypothetical input).
-
-        Also supports batch evaluation for chains.
 
         Args:
             store_id (int): The ID of the agent.
@@ -277,33 +274,6 @@ class Simulation:
 
         return hypothetical_market_share
 
-    # EQUILIBRIUM TRACKING _____________________________________________________________
-
-    def _update_equilibrium_check(self):
-        """Checks if simulation remains in an equilibrium.
-
-        Mirrors NetLogo's 'update-equilibrium-check'.
-
-        Assumptions:
-            A tick is considered unstable if the agent's position or price has changed
-            by more than 1 unit.
-        """
-        stable = True
-        for agent in self.stores:
-            prev_pos, prev_price = self._prev_state[agent._id]
-            if abs(agent.position[0] - prev_pos[0]) > 1:
-                stable = False
-            if abs(agent.position[1] - prev_pos[1]) > 1:
-                stable = False
-            if abs(agent.price - prev_price) > 1:
-                stable = False
-            self._prev_state[agent._id] = (agent.position, agent.price)
-        self._stable_tick_count = self._stable_tick_count + 1 if stable else 0
-
-    def at_equilibrium(self) -> bool:
-        """Returns True when the simulation has been stable for 10 consecutive ticks."""
-        return self._stable_tick_count >= 10
-
     # EXECUTION ________________________________________________________________________
 
     def step(self):
@@ -318,8 +288,7 @@ class Simulation:
                 2. All agents simultaneously evaluate their optimal price.
                 3. All changes are applied at once.
                 4. Consumer-store assignments and area counts are recalculated.
-                5. The equilibrium counter is updated.
-                6. Tick the simulation.
+                5. Tick the simulation.
         """
 
         # Step 1: All agents determine next position.
@@ -339,10 +308,7 @@ class Simulation:
         # Step 4: Consumers are assigned to stores, and area count is recalculated.
         self._recalculate_area()
 
-        # Step 5: Equilibrium counter is updated.
-        self._update_equilibrium_check()
-
-        # Step 6: Tick simulation.
+        # Step 5: Tick simulation.
         self.step_count += 1
 
     def export_state(self) -> Dict:
