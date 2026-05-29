@@ -56,7 +56,7 @@ def identify_configuration(chain_str: str) -> str:
 # METRIC CALCULATIONS
 # -----------------------------------------------------------------------------
 
-def compute_chain_metrics(row) -> tuple[float, float, float]:
+def compute_chain_metrics(row) -> tuple[float, float, float, float]:
     """Calculates intra-chain distance and minimum competitor proximity."""
     pos_map = parse_position(row["store-positions"])
     price_map = parse_price(row["store-prices"])
@@ -65,7 +65,7 @@ def compute_chain_metrics(row) -> tuple[float, float, float]:
     # Validate store id parsing.
     store_ids = list(pos_map.keys())
     if not store_ids:
-        return np.nan, np.nan, np.nan
+        return np.nan, np.nan, np.nan, np.nan
 
     # Intra-chain distances
     intra_dists = []
@@ -75,6 +75,15 @@ def compute_chain_metrics(row) -> tuple[float, float, float]:
                 for j in range(i + 1, len(chain_store_ids)):
                     p1, p2 = pos_map[chain_store_ids[i]], pos_map[chain_store_ids[j]]
                     intra_dists.append(np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2))
+
+    # Intra-chain price differences
+    intra_price_diffs = []
+    for chain_id, chain_store_ids in chain_groups.items():
+        if len(chain_store_ids) >= 2:
+            for i in range(len(chain_store_ids)):
+                for j in range(i + 1, len(chain_store_ids)):
+                    p1, p2 = price_map[chain_store_ids[i]], price_map[chain_store_ids[j]]
+                    intra_price_diffs.append(abs(p1 - p2))
 
     # Map each store to its chain id (None for independent)
     store_to_chain = {s: cid for cid, stores in chain_groups.items() for s in stores}
@@ -100,15 +109,16 @@ def compute_chain_metrics(row) -> tuple[float, float, float]:
             dist = np.sqrt((p_s[0]-pos_map[t][0])**2 + (p_s[1]-pos_map[t][1])**2) 
             if dist < min_d:
                 min_d = dist
-                price_diff_of_min_d_store = price_map[s] - price_map[t]
+                price_diff_of_min_d_store = abs(price_map[s] - price_map[t])
         nearest_comp_by_store.append(float(min_d))
         price_diff_by_nearest_comp.append(float(price_diff_of_min_d_store))
 
     avg_intra = float(np.mean(intra_dists)) if intra_dists else np.nan
+    avg_intra_price_diff = float(np.mean(intra_price_diffs)) if intra_price_diffs else np.nan
     avg_min_comp = float(np.mean(nearest_comp_by_store)) if nearest_comp_by_store else np.nan
     avg_price_diff_by_min_comp = float(np.mean(price_diff_by_nearest_comp)) if price_diff_by_nearest_comp else np.nan
 
-    return avg_intra, avg_min_comp, avg_price_diff_by_min_comp
+    return avg_intra, avg_min_comp, avg_price_diff_by_min_comp, avg_intra_price_diff
 
 # -----------------------------------------------------------------------------
 # PLOTTING ENGINES
@@ -123,13 +133,15 @@ def plot_time_series_metrics(df: pd.DataFrame):
     df["avg_intra_chain_dist"] = [res[0] for res in metrics_res]
     df["min_competitor_dist"] = [res[1] for res in metrics_res]
     df["min_competitor_price_diff"] = [res[2] for res in metrics_res]
+    df["avg_intra_chain_price_diff"] = [res[3] for res in metrics_res]
 
     agg = df.groupby(["layout", "rules", "market_config", "[step]"], as_index=False)[
-        ["avg_intra_chain_dist", "min_competitor_dist", "min_competitor_price_diff"]
+        ["avg_intra_chain_dist", "min_competitor_dist", "min_competitor_price_diff", "avg_intra_chain_price_diff"]
     ].mean()
 
     targets = [
         ("avg_intra_chain_dist", "Mean Intra-Chain Spread Distance", "time_series_intra_chain_spread.png"),
+        ("avg_intra_chain_price_diff", "Mean Intra-Chain Price Difference", "time_series_intra_chain_price_diff.png"),
         ("min_competitor_dist", "Mean Distance to Nearest Competitor", "time_series_mean_nearest_competitor_proximity.png"),
         ("min_competitor_price_diff", "Mean Price Difference to Nearest Competitor", "time_series_mean_nearest_competitor_price_diff.png")
     ]
