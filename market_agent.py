@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from simulation import Simulation
 
+
 class MarketAgent(ABC):
     """
     Abstract superclass to represent seller entities in the simulation "market".
@@ -25,8 +26,9 @@ class MarketAgent(ABC):
         self._id: int = agent_id
 
         # Only set if the class hasn't overridden it with a property descriptor
-        if (not hasattr(type(self), '_area_count')
-            or not isinstance(getattr(type(self), '_area_count'), property)):
+        if not hasattr(type(self), "_area_count") or not isinstance(
+            getattr(type(self), "_area_count"), property
+        ):
             self._area_count: int = 0
 
     @abstractmethod

@@ -5,6 +5,7 @@ Table Version 2.0 logging utilities.
 import csv
 from datetime import datetime
 
+
 def create_log_file(experiment_name: str):
     """Create a CSV file that is compatible with NetLogo Table Version 2.0.
 
@@ -29,6 +30,7 @@ def create_log_file(experiment_name: str):
 
     return csv_file, csv_writer
 
+
 def serialise_list(a_list) -> str:
     """Convert a list to a string format compatible with NetLogo Table Version 2.0.
 
@@ -42,7 +44,7 @@ def serialise_list(a_list) -> str:
         if isinstance(a, list):
             out += serialise_list(a)
         else:
-            if (not first_elem):
+            if not first_elem:
                 out += " "
             out += str(a)
             first_elem = False

@@ -29,7 +29,7 @@ if __name__ == "__main__":
             "store-positions",
             "store-market-shares",
             "store-prices",
-            "store-chain-ids", 
+            "store-chain-ids",
         ]
     )
 

@@ -29,7 +29,7 @@ class Consumer:
         sum of price and distance.
 
         Mirrors NetLogo's 'choose-store' procedure.
-        
+
         Assumption:
             For similarity to NetLogo implementation, distance is implemented as euclidean
                 distance from centroid to centroid.
@@ -38,7 +38,7 @@ class Consumer:
 
         Args:
             stores (list[Store]): Stores that the consumer can choose from.
-        
+
         Returns:
             Store instance that is preferred by the consumer.
         """

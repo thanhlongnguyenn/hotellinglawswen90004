@@ -6,6 +6,7 @@ from market_agent import MarketAgent
 from simulation import Simulation
 from store import Store
 
+
 class Chain(MarketAgent):
     """
     Concrete composite of Stores to define group behaviour. Coordinates
@@ -32,17 +33,17 @@ class Chain(MarketAgent):
 
         # Generate lists of valid individual moves for every single store
         stores_possible_moves: List[List[Tuple[int, int]]] = []
-        
+
         for store in self.controlled_stores:
             x, y = store.position
-            cardinal_moves = [(x, y+1), (x, y-1), (x+1, y), (x-1, y)]
+            cardinal_moves = [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
             possible_moves = [
                 move for move in cardinal_moves if sim.is_valid_consumer_position(move)
             ]
-            
+
             if store._area_count > 0:
                 possible_moves.insert(0, store.position)
-                
+
             stores_possible_moves.append(possible_moves)
 
         # Generate all combinations of moves
@@ -66,8 +67,7 @@ class Chain(MarketAgent):
             total_chain_share = 0
             for store in self.controlled_stores:
                 total_chain_share += sim.calculate_hypothetical_market_share(
-                    store_id=store._id,
-                    hypothetical_changes=hypothetical_changes
+                    store_id=store._id, hypothetical_changes=hypothetical_changes
                 )
 
             if total_chain_share > max_chain_market_share:
@@ -90,13 +90,11 @@ class Chain(MarketAgent):
 
         # Generate lists of valid individual prices for every single store
         stores_possible_prices: List[List[int]] = []
-        
+
         for store in self.controlled_stores:
-            stores_possible_prices.append([
-                store.price,
-                store.price - 1,
-                store.price + 1
-            ])
+            stores_possible_prices.append(
+                [store.price, store.price - 1, store.price + 1]
+            )
 
         # Generate all combinations of prices
         joint_price_combinations = list(itertools.product(*stores_possible_prices))
@@ -120,13 +118,12 @@ class Chain(MarketAgent):
             # Calculate individual contributions within combination
             total_chain_revenue = 0
             current_combination_has_revenue = False
-            
+
             for i, store in enumerate(self.controlled_stores):
                 individual_share = sim.calculate_hypothetical_market_share(
-                    store_id=store._id,
-                    hypothetical_changes=hypothetical_changes
+                    store_id=store._id, hypothetical_changes=hypothetical_changes
                 )
-                
+
                 revenue = individual_share * joint_price[i]
                 if revenue > 0:
                     current_combination_has_revenue = True

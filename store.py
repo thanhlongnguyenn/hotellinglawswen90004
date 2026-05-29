@@ -4,6 +4,7 @@ from typing import Tuple
 from market_agent import MarketAgent
 from simulation import Simulation
 
+
 class Store(MarketAgent):
     """
     Concrete class to replicate NetLogo store "turtles".
@@ -15,11 +16,10 @@ class Store(MarketAgent):
         next_price (int): The buffered price the store will charge.
     """
 
-    def __init__(self, agent_id: int, position: Tuple[int, int],
-        price: int):
+    def __init__(self, agent_id: int, position: Tuple[int, int], price: int):
         """
         Initialises the Store with a unique identifier and initial position and price.
-        
+
         Args:
             agent_id (int): Unique identifier for the Store.
             position (Tuple[int, int]): The (x, y) coordinates of the store's location.
@@ -27,7 +27,7 @@ class Store(MarketAgent):
         """
 
         super().__init__(agent_id)
-        
+
         self.position: Tuple[int, int] = position
         self.price: int = price
         self.next_position: Tuple[int, int] = position
@@ -40,18 +40,18 @@ class Store(MarketAgent):
         """
 
         x, y = self.position
-        cardinal_moves = [(x, y+1), (x, y-1), (x+1, y), (x-1, y)]
-        
+        cardinal_moves = [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
+
         # Filter neighbors to ensure they are within valid consumer coordinates
         possible_moves = [
             move for move in cardinal_moves if sim.is_valid_consumer_position(move)
         ]
 
-        random.shuffle(possible_moves) # Shuffle to prevent bias for tie-breaks
+        random.shuffle(possible_moves)  # Shuffle to prevent bias for tie-breaks
 
         # If we have market share, the status quo is favored in case of ties
         if self._area_count > 0:
-            possible_moves.insert(0, self.position)  
+            possible_moves.insert(0, self.position)
 
         best_move = self.position
         max_market_share = -1
@@ -59,8 +59,7 @@ class Store(MarketAgent):
         # Evaluate each move hypothetically
         for move in possible_moves:
             hypothetical_share = sim.calculate_hypothetical_market_share(
-                store_id=self._id,
-                hypothetical_changes=[(self._id, move, self.price)]
+                store_id=self._id, hypothetical_changes=[(self._id, move, self.price)]
             )
 
             if hypothetical_share > max_market_share:
@@ -87,10 +86,10 @@ class Store(MarketAgent):
         for target_price in possible_prices:
             hypothetical_share = sim.calculate_hypothetical_market_share(
                 store_id=self._id,
-                hypothetical_changes=[(self._id, self.position, target_price)]
+                hypothetical_changes=[(self._id, self.position, target_price)],
             )
             revenue = hypothetical_share * target_price
-            
+
             if revenue > 0:
                 all_zeros = False
 

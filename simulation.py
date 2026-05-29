@@ -40,8 +40,8 @@ class Simulation:
         height: int = 41,
     ):
         self.layout: str = layout
-        self.pricing_only: bool = (rules == "pricing-only")
-        self.moving_only: bool = (rules == "moving-only")
+        self.pricing_only: bool = rules == "pricing-only"
+        self.moving_only: bool = rules == "moving-only"
         self.width: int = width
         self.height: int = height
         self.step_count: int = 0
@@ -56,7 +56,9 @@ class Simulation:
         # Setup our consumers, stores, and market agents.
         self.consumers: List["Consumer"] = self._setup_consumers()
         self.stores: List["Store"] = self._setup_stores(number_of_stores)
-        self.agents: List["MarketAgent"] = self._setup_agents(mode, number_of_chains, chain_allocations)
+        self.agents: List["MarketAgent"] = self._setup_agents(
+            mode, number_of_chains, chain_allocations
+        )
 
         # Snapshot of each agent's position and price for equilibrium tracking,
         # mirroring NetLogo's prev-xcor / prev-ycor / prev-price turtle variables.
@@ -69,7 +71,7 @@ class Simulation:
     # SETUP ___________________________________________________________________
 
     def _setup_consumers(self) -> List["Consumer"]:
-        """Setup simulation's consumers by assigning 
+        """Setup simulation's consumers by assigning
 
         Returns:
             List["Consumer"]: Consumers to be used in the simulation.
@@ -112,7 +114,9 @@ class Simulation:
 
         return stores
 
-    def _setup_agents(self, mode: str, number_of_chains: int, chain_allocations: list[int]) -> List["MarketAgent"]:
+    def _setup_agents(
+        self, mode: str, number_of_chains: int, chain_allocations: list[int]
+    ) -> List["MarketAgent"]:
         """Setup market agents for running the simulation.
 
         Args:
@@ -130,6 +134,7 @@ class Simulation:
             List["MarketAgent"]: List of agents that implement the MarketAgent interface.
         """
         from chain import Chain
+
         agents: List["MarketAgent"] = []
 
         if mode == "store":
@@ -147,8 +152,10 @@ class Simulation:
             if sum(chain_allocations) > len(self.stores):
                 raise RuntimeError("Chain allocations exceed total number of stores.")
             if len(chain_allocations) != number_of_chains:
-                raise RuntimeError("Length of chain_allocations must match number_of_chains.")
-            
+                raise RuntimeError(
+                    "Length of chain_allocations must match number_of_chains."
+                )
+
             # Assign stores to chains according to the provided chain_allocations list
             assigned_stores: Set["Store"] = set()
             store_pool = self.stores.copy()
@@ -156,11 +163,8 @@ class Simulation:
             for i, num_to_allocate in enumerate(chain_allocations):
                 # Pull the requested number of stores out of the pool for this chain
                 chain_stores = [store_pool.pop(0) for _ in range(num_to_allocate)]
-                
-                agents.append(Chain(
-                    agent_id=-(i + 1),
-                    stores=chain_stores
-                ))
+
+                agents.append(Chain(agent_id=-(i + 1), stores=chain_stores))
 
                 assigned_stores.update(chain_stores)
 
@@ -209,10 +213,10 @@ class Simulation:
     def calculate_hypothetical_market_share(
         self,
         store_id: int,
-        hypothetical_changes: List[Tuple[int, Tuple[int, int], int]]
+        hypothetical_changes: List[Tuple[int, Tuple[int, int], int]],
     ) -> int:
         """
-        Calculates the hypothetical market share for an agent given a set of 
+        Calculates the hypothetical market share for an agent given a set of
         hypothetical changes to the simulation state (store positions and prices),
         with all other unlisted agents remaining unchanged.
 
@@ -248,7 +252,7 @@ class Simulation:
             if target_store not in original_states:
                 original_states[target_store] = (
                     target_store.position,
-                    target_store.price
+                    target_store.price,
                 )
 
             # Change the store to have the hypothetical state
@@ -362,7 +366,7 @@ class Simulation:
                     s._id,
                     self.calculate_hypothetical_market_share(
                         store_id=s._id,
-                        hypothetical_changes=[(s._id, s.position, s.price)]
+                        hypothetical_changes=[(s._id, s.position, s.price)],
                     ),
                 ]
             )
@@ -393,7 +397,9 @@ def run_simulation_experiment(params):
         List[str]: Simulation results.
     """
 
-    run_id, max_ticks, num_store, layout, rule, num_chains, mode, chain_allocations = params
+    run_id, max_ticks, num_store, layout, rule, num_chains, mode, chain_allocations = (
+        params
+    )
 
     # Build simulation environment.
     sim = Simulation(

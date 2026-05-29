@@ -33,7 +33,7 @@ if __name__ == "__main__":
             "store-positions",
             "store-market-shares",
             "store-prices",
-            "store-chain-ids", 
+            "store-chain-ids",
         ]
     )
 
@@ -43,44 +43,36 @@ if __name__ == "__main__":
     geographic_space: set = {"line", "plane"}
     rules: set = {"normal", "pricing-only", "moving-only"}
     configurations = [
-        {
-            "num_stores": 4,
-            "mode": "store",
-            "num_chains": 0,
-            "chain_allocations": []
-        },
-        {
-            "num_stores": 4,
-            "mode": "chain",
-            "num_chains": 1,
-            "chain_allocations": [2]
-        },
+        {"num_stores": 4, "mode": "store", "num_chains": 0, "chain_allocations": []},
+        {"num_stores": 4, "mode": "chain", "num_chains": 1, "chain_allocations": [2]},
         {
             "num_stores": 4,
             "mode": "chain",
             "num_chains": 2,
-            "chain_allocations": [2, 2]
-        }
+            "chain_allocations": [2, 2],
+        },
     ]
 
     # Build test cases
     test_cases: list[tuple] = []
     run_counter: int = 1
-    
+
     for run in number_of_runs:
         for config in configurations:
             for layout in geographic_space:
                 for rule in rules:
-                    test_cases.append((
-                        run_counter, 
-                        max_ticks, 
-                        config["num_stores"],
-                        layout, 
-                        rule,
-                        config["num_chains"],
-                        config["mode"],
-                        config["chain_allocations"]
-                    ))
+                    test_cases.append(
+                        (
+                            run_counter,
+                            max_ticks,
+                            config["num_stores"],
+                            layout,
+                            rule,
+                            config["num_chains"],
+                            config["mode"],
+                            config["chain_allocations"],
+                        )
+                    )
                     run_counter += 1
 
     try:
