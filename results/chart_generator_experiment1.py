@@ -53,7 +53,7 @@ def aggregate_metrics(df: pd.DataFrame) -> pd.DataFrame:
 def plot_experiment1(agg: pd.DataFrame, source_label: str):
     for metric, ylabel in [("avg_pairwise_dist", "Avg Pairwise Distance"), ("avg_price_diff", "Avg Pairwise Price Diff")]:
         fig, axes = plt.subplots(2, 3, figsize=(15, 8), sharey=False)
-        fig.suptitle(f"Python Replication: {ylabel} Over Time Ticks", fontsize=14, weight='bold')
+        fig.suptitle(f"{source_label} Model: {ylabel} Over Time Ticks", fontsize=14, weight='bold')
 
         for row, layout in enumerate(LAYOUTS):
             for col, rule in enumerate(RULES):
